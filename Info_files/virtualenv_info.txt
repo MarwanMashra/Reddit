@@ -1,2 +1,0 @@
-VIRTUAL ENVIRONMENT
-RedditScrape
