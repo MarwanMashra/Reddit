@@ -49,6 +49,7 @@ for post in test_posts:
 				search_res=search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
 				if (search_res['totalResultsCount']!=0):
 					dic_results['TotalResults']+=1
+					dic_tmp={}
 					dic_tmp['lng']=search_res['geonames'][0]['lng']
 					dic_tmp['lat']=search_res['geonames'][0]['lat']
 					dic_tmp['img']=post.url
