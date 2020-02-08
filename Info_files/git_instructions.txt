@@ -1,0 +1,15 @@
+git checkout --track -b <nom_de_branche>		e.g. troy-branche
+	Crée une branche locale et se met sur cette branche, et compare la branche au master (en avance, en retard, etc.)
+
+git remote -v
+	Liste les dépôts distants pour le fetch et le push
+
+git remote rm origin
+	Efface la liste des dépôts distants (pas les dépôts eux-mêmes)
+
+git remode add origin <nom_dépôt>		e.g. https://github.com/MarwanMashra/Reddit.git
+	Ajoute le dépôt à la liste des dépôts distants. Le dépôt est le même pour le master ou les branches.
+
+git push origin <nom_de_branche>
+	Push le contenu du dépôt local sur la branche.
+
