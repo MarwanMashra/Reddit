@@ -5,17 +5,18 @@ import json, more_itertools, os, pprint, praw, re, requests, treetaggerwrapper
 
 
 
-def GeoNamesQuery(location, dic_results) :
+def GeoNamesQuery(location, dic_results, dic_tmp, fuzzy=False) :
 	url="http://api.geonames.org/searchJSON"
 	#Ici, FR est fixé: plus tard il y aura une variable code pays passé à la requête: il faudra pouvoir trouver le code pays
 	data="?q="+location+"&country=FR&username=scrapelord"
+	if fuzzy:
+		data+="&fuzzy=0.2" #Recherche fuzzy
 	search_res=requests.get(url+data,auth=("scrapelord","Blorp86"))
 	#print(search_res.encoding) #UTF-8
 	#print("Status code de la requête GeoNames:",search_res.status_code,"\n") #200:OK, 401:non autorisé
 	search_res=search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
 	if search_res['totalResultsCount'] != 0:
 		dic_results['TotalResults']+=1
-		dic_tmp={}
 		dic_tmp['lng']=search_res['geonames'][0]['lng']	#Longitude
 		dic_tmp['lat']=search_res['geonames'][0]['lat']	#Latitude
 		dic_tmp['img']=post.url	#Lien direct vers la photo
@@ -79,13 +80,11 @@ for post in test_posts: #Objets 'submission'
 			IterTagList(location_list,more_itertools.peekable(reddit_tags[title_split+1:]))
 		#Priorité tertiaire: commentaire(s) du redditor qui a posté la photo
 		for comment in post.comments.list(): #Liste du parcours en largeur de l'arborescence de commentaires
-			#NB: Une boucle for crée un iterable et itère dessus, donc ici pas d'appels répétés à la méthode list()
 			location=""
 			if isinstance(comment,praw.models.MoreComments): #On ignore les objets MoreComments (pour le moment?)
 				continue
 			if comment.is_submitter:
 				comment_tags=treetaggerwrapper.make_tags(reddit_tagger.tag_text(comment.body),exclude_nottags=True)
-				#pprint.pprint(comment_tags)
 				IterTagList(location_list,more_itertools.peekable(comment_tags))
 		print("Lieux trouvés:",end="")
 		pprint.pprint(location_list)
@@ -94,11 +93,18 @@ for post in test_posts: #Objets 'submission'
 		#GeoNames
 		if location_list:
 			for loc in location_list:
-				if GeoNamesQuery(loc,dic_results):
+				dic_tmp={} #Initialisé en dehors de la fonction GeoNamesQuery pour pouvoir comparer après l'appel
+				if GeoNamesQuery(loc,dic_results,dic_tmp):
 					break
-			#A FAIRE
-			#Utiliser FeatureClass pour distinguer les types de résultat GeoNames, et hiérarchiser
-			#Correction de fautes de frappe: ajouter recherche google si la requête GeoNames ne trouve pas de résultat?
+			"""Pas de résultat après avoir parcouru toute la liste: on passe à une fuzzy search pour prendre en compte
+			les potentielles erreurs d'orthographe"""
+			if not dic_tmp:
+				for loc in location_list:
+					dic_tmp={}
+					if GeoNamesQuery(loc,dic_results,dic_tmp,fuzzy=True):
+						break
+		#A FAIRE
+		#Utiliser FeatureClass pour distinguer les types de résultat GeoNames, et hiérarchiser
 		else:
 			print("")
 
