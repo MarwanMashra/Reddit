@@ -7,22 +7,29 @@ import json, more_itertools, os, pprint, praw, re, requests, treetaggerwrapper
 
 def GeoNamesQuery(location, dic_results, dic_tmp, fuzzy=False) :
 	url="http://api.geonames.org/searchJSON"
-	#Ici, FR est fixé: plus tard il y aura une variable code pays passé à la requête: il faudra pouvoir trouver le code pays
+	#Ici, FR est fixé: il y aura une variable code pays passé à la requête donc il faudra pouvoir trouver le code pays ISO 3166-1 alpha-2
 	data="?q="+location+"&country=FR&username=scrapelord"
 	if fuzzy:
-		data+="&fuzzy=0.2" #Recherche fuzzy
+		data+="&fuzzy=0.8" #Recherche fuzzy<1
 	search_res=requests.get(url+data,auth=("scrapelord","Blorp86"))
-	#print(search_res.encoding) #UTF-8
 	#print("Status code de la requête GeoNames:",search_res.status_code,"\n") #200:OK, 401:non autorisé
 	search_res=search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
 	if search_res['totalResultsCount'] != 0:
 		dic_results['TotalResults']+=1
-		dic_tmp['lng']=search_res['geonames'][0]['lng']	#Longitude
-		dic_tmp['lat']=search_res['geonames'][0]['lat']	#Latitude
+		print_res="" #Pour affichage test
+		for res in search_res['geonames']: #Recherche d'un match exact
+			if res['toponymName'] == location:
+				dic_tmp['lng']=res['lng']	#Longitude
+				dic_tmp['lat']=res['lat']	#Latitude
+				print_res=res['toponymName']
+				break
+		if not dic_tmp: #Sinon premier résultat
+			dic_tmp['lng']=search_res['geonames'][0]['lng']	#Longitude
+			dic_tmp['lat']=search_res['geonames'][0]['lat']	#Latitude
 		dic_tmp['img']=post.url	#Lien direct vers la photo
 		dic_results['Results'].append(dic_tmp)
 		print("Premier résultat Geonames: ",search_res["geonames"][0]["toponymName"])
-		pprint.pprint(dic_tmp)
+		print("Meilleur résultat Geonames: ",print_res)
 		print("\n###############")
 		return True
 	else:
@@ -48,7 +55,6 @@ password="Blorp86",user_agent="PhotoScraper",username="scrapelord")
 target_sub=reddit.subreddit("EarthPorn") #Subreddit cible
 country="France" #Pays cible
 query="title:"+country
-#print(target_sub.description)
 print("\033[92m"+target_sub.display_name+"\033[0m","\nRésultats de recherche pour les soumissions reddit avec: ",query,"\n")
 
 #Configuration TreeTagger
