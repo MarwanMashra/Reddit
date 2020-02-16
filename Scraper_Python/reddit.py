@@ -7,7 +7,7 @@ import json, more_itertools, os, pprint, praw, re, requests, treetaggerwrapper
 
 def GeoNamesQuery(location, dic_results, dic_tmp, fuzzy=False) :
 	url="http://api.geonames.org/searchJSON"
-	#Ici, FR est fixé: il y aura une variable code pays passé à la requête donc il faudra pouvoir trouver le code pays ISO 3166-1 alpha-2
+	#Ici, FR est fixé: il faudra insérer le code ISO 3166-1 alpha-2 du pays
 	data="?q="+location+"&country=FR&username=scrapelord"
 	if fuzzy:
 		data+="&fuzzy=0.8" #Recherche fuzzy<1
@@ -67,7 +67,7 @@ dic_results['TotalResults']=0
 dic_results['Results']=[]
 for post in test_posts: #Objets 'submission'
 	if re.search(".*"+country+"[.,/[( ]",post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
-		res=re.search("^([^[(]+)",post.title) #Match tous les caractères depuis le début de la ligne, excluant [ et (
+		res=re.search("^(?:\[OC\])?([^[(]+)",post.title) #Match tous les caractères depuis le début de la ligne, excluant [ et (
 		print(res.group(1))
 
 		#Tagging
