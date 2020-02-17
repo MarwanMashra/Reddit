@@ -27,6 +27,20 @@ username: scrapelord
 password: Blorp86
 troyfau@gmail.com
 
+#########
+
+MONGODB
+
+troy.fau@etu.umontpellier.fr
+Troy Fau
+scrapelord	dPSw8KCjKgF2fVp
+
+Whitelisted IP address:
+	78.192.114.158
+
+Connection string
+mongodb+srv://scrapelord:<password>@redditscrape-bxkhv.mongodb.net/test?retryWrites=true&w=majority
+
 
 
 
