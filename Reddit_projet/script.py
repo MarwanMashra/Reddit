@@ -69,7 +69,7 @@ def scraping():          #la fonction qui sera appeler par le JavaScript
 	print("\033[92m"+target_sub.display_name+"\033[0m","\nRésultats de recherche pour les soumissions reddit avec: ",query,"\n")
 
 	#Configuration TreeTagger
-	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG="en") #Se placer dans un dossier pour que le chemin TAGDIR fonctionne
+	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG="en",TAGDIR=os.getcwd()+"/TreeTagger") #Se placer dans un dossier pour que le chemin TAGDIR fonctionne
 
 	#Résultats de la recherche dans le subreddit
 	test_posts=target_sub.search(query,limit=25)
