@@ -11,3 +11,7 @@
 	height: 90%;
 	width: 90%;
 }
+#error{
+	display: none;
+	color: red;
+}
