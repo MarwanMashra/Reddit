@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import json, more_itertools, os, pprint, praw, re, requests,treetaggerwrapper
+import copy, json, mongo, more_itertools, os, pprint, praw, re, requests,treetaggerwrapper
 from flask import Flask, render_template, request, jsonify
 
 
@@ -17,7 +17,15 @@ from flask import Flask, render_template, request, jsonify
 	V   Woodlands
 '''
 
-def GeoNamesQuery(location, code_pays, dic_results, dic_tmp,img_url, fuzzy=False) :
+def dicLoad(res_dic, dic_mongo, location) :
+	dic_mongo['name']=res_dic['name']
+	dic_mongo['lng']=res_dic['lng']
+	dic_mongo['lat']=res_dic['lat']
+	dic_mongo['featureclass']=res_dic['fcl']
+	dic_mongo['location']=location
+
+
+def GeoNamesQuery(location, code_pays, dic_results, dic_tmp, dic_mongo, img_url, fuzzy=False) :
 	url='http://api.geonames.org/searchJSON'
 	data='?q='+location+'&country='+code_pays+'&username=scrapelord'
 	if fuzzy:
@@ -44,15 +52,16 @@ def GeoNamesQuery(location, code_pays, dic_results, dic_tmp,img_url, fuzzy=False
 			dic_tmp['name']=prio_list[0]['name']
 			dic_tmp['lng']=prio_list[0]['lng']
 			dic_tmp['lat']=prio_list[0]['lat']
+			dicLoad(prio_list[0],dic_mongo,location)
 		else: #Sinon premier résultat
 			dic_tmp['name']=search_res['geonames'][0]['name']
 			dic_tmp['lng']=search_res['geonames'][0]['lng']
 			dic_tmp['lat']=search_res['geonames'][0]['lat']
+			dicLoad(search_res['geonames'][0],dic_mongo,location)
 		dic_tmp['img']=img_url	#Lien direct vers la photo
 		dic_results['results'].append(dic_tmp)
 		print('Premier résultat Geonames: ',search_res['geonames'][0]['name'])
 		print('Meilleur résultat Geonames: ',print_res)
-		print('\n###############')
 		return True
 	else:
 		return False
@@ -61,7 +70,7 @@ def GeoNamesQuery(location, code_pays, dic_results, dic_tmp,img_url, fuzzy=False
 def IterTagList(location_list, p_iter) :
 	location=''
 	for word,pos,lemma in p_iter:
-		if pos == 'NP' or  pos == 'NP0': #Nom propre 'NP' pour Windows et 'NP0' pour Linux
+		if pos == 'NP' or  pos == 'NP0' and word[0].isalpha(): #Nom propre 'NP' pour Windows et 'NP0' pour Linux
 			location+=word+' '
 			if p_iter.peek(('end','end','end'))[1] != 'NP' and \
 			p_iter.peek(('end','end','end'))[1] != 'NP0': #Tuple par défaut passé à peek, retourné en fin d'itération
@@ -79,13 +88,13 @@ def home():
 	return render_template('map.html')
 
 @app.route('/scraping',methods=['GET','POST'])
-#La fonction appelée par la requête Javascript
-def scraping():
+def scraping(): #La fonction appelée par la requête Javascript
 	#Configuration du scraper, ne pas modifier
 	reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
 	password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
 	#Configuration recherche reddit
+	rgnversion='1.00'
 	target_sub=reddit.subreddit('EarthPorn') #Subreddit cible
 	#Paramètres de la requête Javascript
 	country=request.args.get('country')
@@ -149,17 +158,29 @@ def scraping():
 
 					#GeoNames
 					if location_list:
+						dic_mongo={}
+						dic_mongo['img_url']=post.url
+						dic_mongo['search_version']=rgnversion
+						dic_mongo['title']=res.group(1).strip()
+						dic_mongo['taglist']=reddit_tags
+						dic_mongo['location_list']=location_list
 						for loc in location_list:
 							dic_tmp={} #Initialisé en dehors de la fonction GeoNamesQuery pour pouvoir comparer après l'appel
-							if GeoNamesQuery(loc,country_code,dic_results,dic_tmp,post.url):
+							if GeoNamesQuery(loc,country_code,dic_results,dic_tmp,dic_mongo,post.url):
 								break
 						'''Pas de résultat après avoir parcouru toute la liste: on passe à une fuzzy search pour prendre en compte
 						les potentielles erreurs d'orthographe'''
 						if not dic_tmp:
 							for loc in location_list:
 								dic_tmp={}
-								if GeoNamesQuery(loc,country_code,dic_results,dic_tmp,post.url,fuzzy=True):
+								if GeoNamesQuery(loc,country_code,dic_results,dic_tmp,dic_mongo,post.url,fuzzy=True):
 									break
+						#Chargement dans la base de données
+						if 'location' in dic_mongo:
+							dic_tostore=copy.deepcopy(dic_mongo)
+							document=mongo.MongoSave(dic_tostore)
+							document.storeindb('Resultats_RGN')
+						print('\n###############')
 					else:
 						print('')
 
