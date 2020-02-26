@@ -1,0 +1,19 @@
+#mapid{
+	width: 1000px; 
+	height: 800px;
+	left: 45%;
+}
+.container{
+	height: 300%;
+	width: 300%;
+}
+
+.image{
+	height: 90%;
+	width: 90%;
+}
+
+iframe {
+    border: 1px solid black;
+    width: 100%;
+}
