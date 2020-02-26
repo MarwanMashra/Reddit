@@ -17,12 +17,13 @@ from flask import Flask, render_template, request, jsonify
 	V   Woodlands
 '''
 
-def dicLoad(res_dic, dic_mongo, location) :
-	dic_mongo['name']=res_dic['name']
-	dic_mongo['lng']=res_dic['lng']
-	dic_mongo['lat']=res_dic['lat']
-	dic_mongo['featureclass']=res_dic['fcl']
-	dic_mongo['location']=location
+def dicLoad(res_dic, store_dic, opt_loc=None) :
+	store_dic['name']=res_dic['name']
+	store_dic['lng']=res_dic['lng']
+	store_dic['lat']=res_dic['lat']
+	if opt_loc is not None:
+		store_dic['featureclass']=res_dic['fcl']
+		store_dic['location']=opt_loc
 
 
 def GeoNamesQuery(location, code_pays, dic_results, dic_tmp, dic_mongo, img_url, fuzzy=False) :
@@ -45,15 +46,11 @@ def GeoNamesQuery(location, code_pays, dic_results, dic_tmp, dic_mongo, img_url,
 					prio_list.insert(0,res)
 					break
 		if prio_list:
-			dic_tmp['name']=prio_list[0]['name']
-			dic_tmp['lng']=prio_list[0]['lng']
-			dic_tmp['lat']=prio_list[0]['lat']
+			dicLoad(prio_list[0],dic_tmp)
 			dicLoad(prio_list[0],dic_mongo,location)
 			print_res=prio_list[0]['name']
 		else: #Sinon premier résultat
-			dic_tmp['name']=search_res['geonames'][0]['name']
-			dic_tmp['lng']=search_res['geonames'][0]['lng']
-			dic_tmp['lat']=search_res['geonames'][0]['lat']
+			dicLoad(search_res['geonames'][0],dic_tmp)
 			dicLoad(search_res['geonames'][0],dic_mongo,location)
 		dic_tmp['img']=img_url	#Lien direct vers la photo
 		dic_results['results'].append(dic_tmp)
