@@ -44,15 +44,12 @@ def GeoNamesQuery(location, code_pays, dic_results, dic_tmp, dic_mongo, img_url,
 				elif res['fcl'] in ['H','L','T','U','V']:
 					prio_list.insert(0,res)
 					break
-				dic_tmp['lng']=res['lng']
-				dic_tmp['lat']=res['lat']
-				print_res=res['toponymName']
-				break
 		if prio_list:
 			dic_tmp['name']=prio_list[0]['name']
 			dic_tmp['lng']=prio_list[0]['lng']
 			dic_tmp['lat']=prio_list[0]['lat']
 			dicLoad(prio_list[0],dic_mongo,location)
+			print_res=prio_list[0]['name']
 		else: #Sinon premier résultat
 			dic_tmp['name']=search_res['geonames'][0]['name']
 			dic_tmp['lng']=search_res['geonames'][0]['lng']
