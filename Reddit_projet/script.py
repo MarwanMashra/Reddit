@@ -101,7 +101,7 @@ def scraping(): #La fonction appelée par la requête Javascript
 	#Se placer dans un dossier pour que le chemin TAGDIR fonctionne
 
 	#Résultats de la recherche dans le subreddit
-	test_posts=target_sub.search(query,limit=25)
+	test_posts=target_sub.search(query,limit=20)
 	dic_results={}	#Dico stockant tous les résultats de recherche (results) et les informations nécessaires (head)
 	dic_results['head']={}
 	dic_results['head']['total']=0

@@ -12,18 +12,17 @@ class MongoSave:
 		self.document = dic
 
 	def storeindb(self,coll_tostore):
-		client=pymongo.MongoClient("mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv."
-								  +"mongodb.net/test?retryWrites=true&w=majority") #Connexion
+		client=pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
+								  +'mongodb.net/test?retryWrites=true&w=majority') #Connexion
 		reddit=client.RedditScrape #Renvoie la base de données RedditScrape
 		coll=reddit[coll_tostore]
-		cursors=coll.find()
-		nostore = False
-		for res in cursors:
-			if res["img_url"] == self.document["img_url"] and \
-			res["search_version"] == self.document["search_version"]:
-				nostore = True
-				break
-		if not nostore:
+		"""De mongoDB manual: ' If you use the unique constraint on a compound index, then MongoDB
+		will enforce uniqueness on the combination of the index key values.'"""
+		coll.create_index([('search_version',pymongo.DESCENDING),
+						   ('img_url',pymongo.ASCENDING)],name='img_and_version',unique=True)
+		try:
 			coll.insert_one(self.document)
+		except pymongo.errors.DuplicateKeyError:
+			print('Document déjà présent dans la collection '+coll.name+' de la base de données.')
 		else:
-			print("Document déjà présent dans la collection "+coll.name+" de la base de données.")
+			pass
