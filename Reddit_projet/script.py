@@ -88,7 +88,7 @@ La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
 def locationsearch(location_list, p_iter):
 	location = ''
 	for word,pos,lemma in p_iter:
-		if pos == 'NP' or  pos == 'NP0' and word[0].isalpha():
+		if pos in ['NP0','NP'] and word[0].isalpha():
 			location += word+' '
 			if p_iter.peek(('end','end','end'))[1] not in ['NP0','NP']:
 				location_list.append(location.rstrip())
@@ -123,9 +123,8 @@ def scraping():
 	#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
 	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
-	#Résultats de la recherche dans le subreddit
-	test_posts = target_sub.search(query,limit=20)
-	dic_results = {} #Dico stockant tous les résultats de recherche (results) et les informations sur le pays (head)
+	#Dico stockant tous les résultats de recherche (results) + informations générales (head)
+	dic_results = {}
 	dic_results['head'] = {}
 	dic_results['head']['total'] = 0
 	dic_results['head']['country'] = {}
@@ -139,7 +138,11 @@ def scraping():
 	dic_results['head']['country']['lat'] = search_res['geonames'][0]['lat'] 
 	dic_results['results'] = []
 
-	#Objets 'submission' renvoyés par la recherche
+	#Liste de chargement pour la base de données
+	database_list = []
+
+	#Résultats de la recherche dans le subreddit
+	test_posts = target_sub.search(query,limit=15)
 	for post in test_posts:
 		if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
 			#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
@@ -201,16 +204,44 @@ def scraping():
 							for loc in location_list:
 								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
 									break
-						#Chargement dans la base de données
 						if 'location' in dic_mongo:
 							dic_tostore = copy.deepcopy(dic_mongo)
-							document = mongo.MongoSave(dic_tostore)
-							document.storeindb('Resultats_RGN',img_url='A',search_version='D')
+							database_list.append(dic_tostore)
 						print('\n###############')
 					else:
 						print('')
-
+	#Chargement dans la base de données
+	documents = mongo.MongoSave(database_list)
+	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
 	return jsonify(dic_results)	#Renvoyer directement un objet JSON
+
+
+@app.route('/expert_init',methods=['GET','POST'])
+def expert_init():
+	experts = mongo.MongoSave([])
+	if not experts.mongocheck('Resultats_Tests'):
+		db_list = [{
+						'user_id': 'NDebart',
+						'code': 1,
+						'num_answers': 0
+				   }
+				   {
+				   		'user_id': 'SDjebrouni',
+				   		'code': 2,
+				   		'num_answers': 0
+				   }
+				   {
+				   		'user_id': 'TFau',
+				   		'code': 4,
+				   		'num_answers': 0
+				   }
+				   {
+				   		'user_id': 'MMashra',
+				   		'code': 8,
+				   		'num_answers': 0
+				   }]
+		experts.reinit(db_list)
+		experts.storeindb('Resultats_Tests',user_id='A')
 
 
 @app.route('/get_badresults',methods=['GET','POST'])
@@ -218,7 +249,7 @@ def get_badresults():
 	dbfinder = mongo.MongoLoad({'search_version': '1.00', 'test_result': 'NOT_OK'},
 						   	   {'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
 							  	'name': 1, 'location': 1, '_id': 0})
-	doc_list = dbfiner.retrieve('Resultats_RGN',limit=5)
+	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	return json.dumps(doc_list)
 
 
