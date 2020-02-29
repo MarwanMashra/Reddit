@@ -38,7 +38,7 @@ tous les résultats, et dans un dico qui sera enregistré dans la base de donné
 
 Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
 la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.'''
-def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, img_url, fuzzy=False) :
+def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False) :
 	url = 'http://api.geonames.org/searchJSON'
 	data = '?q='+location+'&country='+country_code+'&username=scrapelord'
 	if fuzzy:
@@ -49,22 +49,24 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, img_
 		if search_res['totalResultsCount'] != 0:
 			dic_results['head']['total'] += 1
 			print_res = '' #Pour affichage test
-			prio_list = []
-			for res in search_res['geonames']:
-				if res['name'].lower() == location.lower():
-					if res['fcl'] in ['A','P','R','S'] and not prio_list:
-						prio_list.append(res)
-					elif res['fcl'] in ['H','L','T','U','V']:
-						prio_list.insert(0,res)
-						break
-			if prio_list:
-				dicload(prio_list[0],dic_tmp)
-				dicload(prio_list[0],dic_mongo,location)
-				print_res = prio_list[0]['name']
+			if exact:
+				prio_list = []
+				for res in search_res['geonames']:
+					if res['name'].lower() == location.lower():
+						if res['fcl'] in ['A','P','R','S'] and not prio_list:
+							prio_list.append(res)
+						elif res['fcl'] in ['H','L','T','U','V']:
+							prio_list.insert(0,res)
+							break
+				if prio_list:
+					dicload(prio_list[0],dic_tmp)
+					dicload(prio_list[0],dic_mongo,location)
+					print_res = prio_list[0]['name']
+				else:
+					return False
 			else:
 				dicload(search_res['geonames'][0],dic_tmp)
 				dicload(search_res['geonames'][0],dic_mongo,location)
-			dic_tmp['img'] = img_url	#Lien direct vers la photo
 			dic_results['results'].append(dic_tmp)
 			print('Premier résultat Geonames: ',search_res['geonames'][0]['name'])
 			print('Meilleur résultat Geonames: ',print_res)
@@ -110,7 +112,7 @@ def scraping():
 
 	#Configuration recherche reddit
 	rgnversion = '1.00'
-	target_sub = reddit.subreddit('EarthPorn') #Subreddit cible
+	target_sub = reddit.subreddit('EarthPorn')
 	#Paramètres de la requête Javascript
 	country = request.args.get('country')
 	country_code = request.args.get('country_code')
@@ -175,6 +177,7 @@ def scraping():
 					#GeoNames
 					if location_list:
 						dic_mongo = {}
+						dic_mongo['link'] = post.permalink
 						dic_mongo['img_url'] = post.url
 						dic_mongo['search_version'] = rgnversion
 						dic_mongo['country'] = country
@@ -182,14 +185,19 @@ def scraping():
 						dic_mongo['taglist'] = reddit_tags
 						dic_mongo['location_list'] = location_list
 						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-						dic_tmp['country'] = country
+						dic_tmp['img'] = post.url #Lien direct vers la photo
 						for loc in location_list:
-							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,post.url):
+							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
 								break
-						#Pas de résultat après avoir parcouru toute la liste: on passe à une fuzzy search
+						#Pas de match exact après avoir parcouru toute la liste: on prend le premier résultat
 						if 'name' not in dic_tmp:
 							for loc in location_list:
-								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,post.url,fuzzy=True):
+								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo):
+									break
+						#Pas de résultat: on passe à une fuzzy search
+						if 'name' not in dic_tmp:
+							for loc in location_list:
+								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
 									break
 						#Chargement dans la base de données
 						if 'location' in dic_mongo:
