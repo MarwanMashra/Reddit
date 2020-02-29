@@ -184,7 +184,7 @@ def scraping():
 						dic_mongo['search_version'] = rgnversion
 						dic_mongo['country'] = country
 						dic_mongo['title'] = res.group(1).strip()
-						dic_mongo['taglist'] = reddit_tags
+						dic_mongo['tag_list'] = reddit_tags
 						dic_mongo['location_list'] = location_list
 						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
 						dic_tmp['img'] = post.url
@@ -206,7 +206,7 @@ def scraping():
 						if 'location' in dic_mongo:
 							dic_tostore = copy.deepcopy(dic_mongo)
 							document = mongo.MongoSave(dic_tostore)
-							document.storeindb('Resultats_RGN')
+							document.storeindb('Resultats_RGN',img_url='A',search_version='D')
 						print('\n###############')
 					else:
 						print('')
