@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, jsonify
 
 #This code attempts to conform to PEP8
 
-'''Feature classes ('fcl')
+"""Feature classes ('fcl')
 	A   Administrative divisions
 	H   Surface waters
 	L   Parks/reserves
@@ -16,10 +16,10 @@ from flask import Flask, render_template, request, jsonify
 	T   Mountains/Islands
 	U   Undersea
 	V   Woodlands
-'''
+"""
 
 
-'''Stockage dans un dictionnaire des informations sur le résultat geonames.'''
+"""Stockage dans un dictionnaire des informations sur le résultat geonames."""
 def dicload(res_dic, store_dic, opt_loc=None) :
 	store_dic['name'] = res_dic['name']
 	store_dic['lng'] = res_dic['lng']
@@ -29,7 +29,7 @@ def dicload(res_dic, store_dic, opt_loc=None) :
 		store_dic['location'] = opt_loc
 
 
-'''Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
+"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
 la fonction locationsearch. D'abord recherche d'un match exact, en privilégiant les lieux
 naturels plutôt qu'humains; sinon choix du premier résultat de recherche.
 
@@ -37,7 +37,8 @@ Stockage des informations dans un dico temporaire qui sera ensuite rajouté au d
 tous les résultats, et dans un dico qui sera enregistré dans la base de données.
 
 Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
-la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.'''
+la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
+"""
 def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False) :
 	url = 'http://api.geonames.org/searchJSON'
 	data = '?q='+location+'&country='+country_code+'&username=scrapelord'
@@ -77,12 +78,13 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 		sys.exit("Erreur dans la recherche Geonames: code "+search_res.status_code+". Arrêt du programme.")
 
 
-'''Recherche de lieux potentiels par création de chaîne à partir des noms propres
+"""Recherche de lieux potentiels par création de chaîne à partir des noms propres
 voisins (NP0 sous Linux, NP sous Windows). Ces lieux sont stockés dans une liste.
 La méthode peek() permet de regarder l'élément suivant de la liste. Elle prend un
 tuple par défaut qui sera consulté en fin d'itération pour ne pas causer une erreur
 de sortie de liste.
-La méthode rstrip() élimine les blancs potentiels en fin de chaîne.'''
+La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
+"""
 def locationsearch(location_list, p_iter) :
 	location = ''
 	for word,pos,lemma in p_iter:
@@ -123,7 +125,7 @@ def scraping():
 	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
 	#Résultats de la recherche dans le subreddit
-	test_posts = target_sub.search(query,limit=60)
+	test_posts = target_sub.search(query,limit=20)
 	dic_results = {} #Dico stockant tous les résultats de recherche (results) et les informations sur le pays (head)
 	dic_results['head'] = {}
 	dic_results['head']['total'] = 0
@@ -178,14 +180,15 @@ def scraping():
 					if location_list:
 						dic_mongo = {}
 						dic_mongo['link'] = post.permalink
-						dic_mongo['img_url'] = post.url
+						dic_mongo['img_url'] = post.url #Lien direct vers la photo
 						dic_mongo['search_version'] = rgnversion
 						dic_mongo['country'] = country
 						dic_mongo['title'] = res.group(1).strip()
 						dic_mongo['taglist'] = reddit_tags
 						dic_mongo['location_list'] = location_list
 						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-						dic_tmp['img'] = post.url #Lien direct vers la photo
+						dic_tmp['img'] = post.url
+						dic_tmp['search_version'] = rgnversion
 						for loc in location_list:
 							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
 								break
