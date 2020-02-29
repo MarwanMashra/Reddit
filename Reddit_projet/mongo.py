@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import dns, pymongo
+import dns, pymongo, sys
 
 
-"""Insertion d'un document: création de la collection si elle n'existe pas, et création
+"""Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
 pas obligatoire.
 Syntaxe pour l'index en paramètre: <nom champs du document>=<'A' ou 'D'>,... Sera transformé
@@ -14,16 +14,26 @@ are created lazily (...) Collections and databases are created when the first do
 inserted into them.'
 """
 class MongoSave:
-	def __init__(self,dic):
-		self.document = dic
+	def __init__(self,dblist):
+		self.document = dblist
 
-	def reinit(self,dic):
-		self.document = dic
+	def reinit(self,dblist):
+		self.document = dblist
+
+	def mongo_connect(self): #Renvoie la base de données
+		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
+								    +'mongodb.net/test?retryWrites=true&w=majority')
+		return client.RedditScrape
+
+	def mongocheck(self,coll_exists):
+		reddit = self.mongo_connect()
+		if coll_exists in reddit.list_collection_names:
+			return True
+		else:
+			return False
 
 	def storeindb(self,coll_tostore,**index):
-		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								    +'mongodb.net/test?retryWrites=true&w=majority') #Connexion
-		reddit = client.RedditScrape #Renvoie la base de données RedditScrape
+		reddit = self.mongo_connect()
 		coll = reddit[coll_tostore]
 		index_list = []
 		for key,value in index.items():
@@ -40,9 +50,14 @@ class MongoSave:
 				index_name += ishort[0] + '_'
 			coll.create_index(index_list,name=index_name.rstrip('_'),unique=True)
 		try:
-			coll.insert_one(self.document)
-		except pymongo.errors.DuplicateKeyError:
-			print('Document déjà présent dans la collection '+coll.name+' de la base de données.')
+			coll.insert_many(self.document,ordered=False)
+		except pymongo.errors.BulkWriteError as error:
+			for e in error.details['writeErrors']:
+				if e['code'] == 11000:
+					print('Document '+str(e['op']['_id'])+' déjà présent dans la collection '
+						+coll.name+' de la base de données.')
+				else:
+					sys.exit('Erreur lors de l\'écriture: '+e['errmsg'])
 		else:
 			pass
 
@@ -77,10 +92,13 @@ class MongoUpd:
 	def reinit(self,dic):
 		self.filter = dic
 
-	def updatedb(self,coll_toupd):
+	def mongo_connect(self):
 		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
 								    +'mongodb.net/test?retryWrites=true&w=majority')
-		reddit = client.RedditScrape
+		return client.RedditScrape
+
+	def updatedb(self,coll_toupd):
+		reddit = self.mongo_connect()
 		coll = reddit[coll_toupd]
 		"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
 		query so that the query selects the documents in the collection that match all the conditions.'"""
@@ -90,6 +108,16 @@ class MongoUpd:
 								'search_version': self.filter['search_version']
 							 },
 							 {'$set': {dico['field']: dico['newvalue']}})
+
+	def unsetdb(self,coll_toupd):
+		reddit = self.mongo_connect()
+		coll = reddit[coll_toupd]
+		for dico in self.filter['updates']:
+			coll.update_many({
+								'img_url': {'$in': dico['url']},
+								'search_version': self.filter['search_version']
+							 },
+							 {'$unset': {dico['field']: dico['newvalue']}})
 
 
 """Recherche et extraction d'un document: format paramètres:
