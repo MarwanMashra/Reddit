@@ -20,7 +20,7 @@ from flask import Flask, render_template, request, jsonify
 
 
 """Stockage dans un dictionnaire des informations sur le résultat geonames."""
-def dicload(res_dic, store_dic, opt_loc=None) :
+def dicload(res_dic, store_dic, opt_loc=None):
 	store_dic['name'] = res_dic['name']
 	store_dic['lng'] = res_dic['lng']
 	store_dic['lat'] = res_dic['lat']
@@ -39,7 +39,7 @@ tous les résultats, et dans un dico qui sera enregistré dans la base de donné
 Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
 la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
 """
-def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False) :
+def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False):
 	url = 'http://api.geonames.org/searchJSON'
 	data = '?q='+location+'&country='+country_code+'&username=scrapelord'
 	if fuzzy:
@@ -85,13 +85,12 @@ tuple par défaut qui sera consulté en fin d'itération pour ne pas causer une 
 de sortie de liste.
 La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
 """
-def locationsearch(location_list, p_iter) :
+def locationsearch(location_list, p_iter):
 	location = ''
 	for word,pos,lemma in p_iter:
 		if pos == 'NP' or  pos == 'NP0' and word[0].isalpha():
 			location += word+' '
-			if p_iter.peek(('end','end','end'))[1] != 'NP' and \
-			p_iter.peek(('end','end','end'))[1] != 'NP0':
+			if p_iter.peek(('end','end','end'))[1] not in ['NP0','NP']:
 				location_list.append(location.rstrip())
 				location = ''
 
@@ -212,6 +211,16 @@ def scraping():
 						print('')
 
 	return jsonify(dic_results)	#Renvoyer directement un objet JSON
+
+
+@app.route('/get_badresults',methods=['GET','POST'])
+def get_badresults():
+	dbfinder = mongo.MongoLoad({'search_version': '1.00', 'test_result': 'NOT_OK'},
+						   	   {'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
+							  	'name': 1, 'location': 1, '_id': 0})
+	doc_list = dbfiner.retrieve('Resultats_RGN',limit=5)
+	return json.dumps(doc_list)
+
 
 if __name__ == '__main__' :
 	app.run(debug=True,port=5000)

@@ -3,6 +3,7 @@
 
 import dns, pymongo
 
+
 """Insertion d'un document: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
 pas obligatoire.
@@ -16,9 +17,12 @@ class MongoSave:
 	def __init__(self,dic):
 		self.document = dic
 
+	def reinit(self,dic):
+		self.document = dic
+
 	def storeindb(self,coll_tostore,**index):
 		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								  +'mongodb.net/test?retryWrites=true&w=majority') #Connexion
+								    +'mongodb.net/test?retryWrites=true&w=majority') #Connexion
 		reddit = client.RedditScrape #Renvoie la base de données RedditScrape
 		coll = reddit[coll_tostore]
 		index_list = []
@@ -55,7 +59,7 @@ le document.
 	updates:
 	[
 		{
-			field: <champ à modifier>
+			field: <champs à modifier>
 			newvalue: <nouvelle valeur du champs>
 			url: [img_url du doc A1,...,img_url du doc An]
 		}
@@ -75,7 +79,7 @@ class MongoUpd:
 
 	def updatedb(self,coll_toupd):
 		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								  +'mongodb.net/test?retryWrites=true&w=majority')
+								    +'mongodb.net/test?retryWrites=true&w=majority')
 		reddit = client.RedditScrape
 		coll = reddit[coll_toupd]
 		"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
@@ -86,5 +90,48 @@ class MongoUpd:
 								'search_version': self.filter['search_version']
 							 },
 							 {'$set': {dico['field']: dico['newvalue']}})
+
+
+"""Recherche et extraction d'un document: format paramètres:
+La requête, simple pour le moment:
+{
+	<champs>: <valeur>,
+	...
+	<champs>: <valeur>
+}
+La projection (par inclusion):
+{
+	<champs>: 1
+	...
+	<champs>: 1
+	(optionnel) '_id': 0
+}
+OU (par exclusion)
+{
+	<champs>: 0
+	...
+	<champs>: 0
+}
+Si on veut retourner tous les champs, passer un dictionnaire vide.
+"""
+class MongoLoad:
+	def __init__(self,dic_q,dic_p):
+		self.query = dic_q
+		self.projection = dic_p
+
+	def reinit(self,dic_q,dic_p):
+		self.query = dic_q
+		self.projection = dic_p
+
+	def retrieve(self,coll_tosearch,limit=0):
+		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
+								    +'mongodb.net/test?retryWrites=true&w=majority')
+		reddit = client.RedditScrape
+		coll = reddit[coll_tosearch]
+		if limit == 0:
+			return list(coll.find(self.query,self.projection))
+		else:
+			return list(coll.find(self.query,self.projection,limit=limit))
+
 
 
