@@ -224,17 +224,17 @@ def expert_init():
 						'user_id': 'NDebart',
 						'code': 1,
 						'num_answers': 0
-				   }
+				   },
 				   {
 				   		'user_id': 'SDjebrouni',
 				   		'code': 2,
 				   		'num_answers': 0
-				   }
+				   },
 				   {
 				   		'user_id': 'TFau',
 				   		'code': 4,
 				   		'num_answers': 0
-				   }
+				   },
 				   {
 				   		'user_id': 'MMashra',
 				   		'code': 8,
@@ -244,9 +244,10 @@ def expert_init():
 		experts.storeindb('Resultats_Tests',user_id='A')
 
 
-@app.route('/get_badresults',methods=['GET','POST'])
-def get_badresults():
-	dbfinder = mongo.MongoLoad({'search_version': '1.00', 'test_result': 'NOT_OK'},
+@app.route('/get_results',methods=['GET','POST'])
+def get_results():
+	result_value = request.args.get('value')
+	dbfinder = mongo.MongoLoad({'search_version': '1.00', 'test_result': result_value},
 						   	   {'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
 							  	'name': 1, 'location': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)

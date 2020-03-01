@@ -36,4 +36,4 @@ update_dic['updates'] = [{
 							'url': ['https://i.redd.it/7h95m06db2w31.png','https://i.redd.it/6wbjlunbdlc41.jpg']
 						}]
 updater.reinit(update_dic)
-updater.unsetdb('Resultats_RGN') #Suppression du champs 'test_result'
+updater.updatedb('Resultats_RGN',unset=True) #Suppression du champs 'test_result'

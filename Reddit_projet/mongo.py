@@ -1,8 +1,26 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import dns, pymongo, sys
+import abc, dns, pymongo, sys
 
+
+"""De https://docs.python.org/3/library/abc.html: 'Unlike Java abstract methods, these abstract
+methods may have an implementation. This implementation can be called via the super() mechanism
+from the class that overrides it.'
+"""
+class Mongo(abc.ABC):
+	@abc.abstractmethod #Pas d'instantiation de cette classe
+	def mongo_connect(self):
+		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
+								    +'mongodb.net/test?retryWrites=true&w=majority')
+		return client.RedditScrape
+
+	def mongocheck(self,coll_exists):
+		reddit = self.mongo_connect()
+		if coll_exists in reddit.list_collection_names():
+			return True
+		else:
+			return False
 
 """Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
@@ -13,24 +31,15 @@ De pymongo: 'An important note about collections (and databases) in MongoDB is t
 are created lazily (...) Collections and databases are created when the first document is
 inserted into them.'
 """
-class MongoSave:
+class MongoSave(Mongo):
 	def __init__(self,dblist):
 		self.document = dblist
 
 	def reinit(self,dblist):
 		self.document = dblist
 
-	def mongo_connect(self): #Renvoie la base de données
-		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								    +'mongodb.net/test?retryWrites=true&w=majority')
-		return client.RedditScrape
-
-	def mongocheck(self,coll_exists):
-		reddit = self.mongo_connect()
-		if coll_exists in reddit.list_collection_names:
-			return True
-		else:
-			return False
+	def mongo_connect(self):
+		return super().mongo_connect()
 
 	def storeindb(self,coll_tostore,**index):
 		reddit = self.mongo_connect()
@@ -53,7 +62,7 @@ class MongoSave:
 			coll.insert_many(self.document,ordered=False)
 		except pymongo.errors.BulkWriteError as error:
 			for e in error.details['writeErrors']:
-				if e['code'] == 11000:
+				if e['code'] == 11000: #DuplicateKeyError
 					print('Document '+str(e['op']['_id'])+' déjà présent dans la collection '
 						+coll.name+' de la base de données.')
 				else:
@@ -85,7 +94,7 @@ le document.
 	]
 }
 """
-class MongoUpd:
+class MongoUpd(Mongo):
 	def __init__(self,dic):
 		self.filter = dic
 
@@ -93,31 +102,23 @@ class MongoUpd:
 		self.filter = dic
 
 	def mongo_connect(self):
-		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								    +'mongodb.net/test?retryWrites=true&w=majority')
-		return client.RedditScrape
+		return super().mongo_connect()
 
-	def updatedb(self,coll_toupd):
+	"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
+	query so that the query selects the documents in the collection that match all the conditions.'"""
+	def updatedb(self,coll_toupd,unset=False):
 		reddit = self.mongo_connect()
 		coll = reddit[coll_toupd]
-		"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
-		query so that the query selects the documents in the collection that match all the conditions.'"""
+		if not unset:
+			op = '$set' #Mise à jour de champs
+		else:
+			op = '$unset' #Suppression de champs
 		for dico in self.filter['updates']:
 			coll.update_many({
 								'img_url': {'$in': dico['url']},
 								'search_version': self.filter['search_version']
 							 },
-							 {'$set': {dico['field']: dico['newvalue']}})
-
-	def unsetdb(self,coll_toupd):
-		reddit = self.mongo_connect()
-		coll = reddit[coll_toupd]
-		for dico in self.filter['updates']:
-			coll.update_many({
-								'img_url': {'$in': dico['url']},
-								'search_version': self.filter['search_version']
-							 },
-							 {'$unset': {dico['field']: dico['newvalue']}})
+							 {op: {dico['field']: dico['newvalue']}})
 
 
 """Recherche et extraction d'un document: format paramètres:
@@ -142,7 +143,7 @@ OU (par exclusion)
 }
 Si on veut retourner tous les champs, passer un dictionnaire vide.
 """
-class MongoLoad:
+class MongoLoad(Mongo):
 	def __init__(self,dic_q,dic_p):
 		self.query = dic_q
 		self.projection = dic_p
@@ -151,10 +152,11 @@ class MongoLoad:
 		self.query = dic_q
 		self.projection = dic_p
 
+	def mongo_connect(self):
+		return super().mongo_connect()
+
 	def retrieve(self,coll_tosearch,limit=0):
-		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								    +'mongodb.net/test?retryWrites=true&w=majority')
-		reddit = client.RedditScrape
+		reddit = self.mongo_connect()
 		coll = reddit[coll_tosearch]
 		if limit == 0:
 			return list(coll.find(self.query,self.projection))
