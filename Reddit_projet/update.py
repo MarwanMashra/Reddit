@@ -22,7 +22,7 @@ update_dic['updates'] = [{
 							},
 							{
 							'field': 'testers',
-							'newvalue': 15,
+							'newvalue': 2**0 + 2**1 + 2**2,
 							'url': ['https://i.redd.it/6wbjlunbdlc41.jpg']
 							}]
 
@@ -30,11 +30,11 @@ updater = mongo.MongoUpd(update_dic)
 updater.updatedb('Resultats_RGN') #Rajout du champs 'test_result'
 
 #Extraction de documents
-document = mongo.MongoLoad({'search_version': '1.00', 'test_result': 'NOT_OK'},
+document = mongo.MongoLoad({'search_version': '1.00', 'test_result': 'NOT_OK', 'testers': {'$gte': 4}},
 						   {'search_version': 1, 'country': 1, 'title': 1,
-							'name': 1, 'location': 1, 'testers': 1, '_id': 0},
-						   {'op': '$gte', 'field': 'testers', 'value': 8})
-test_case = document.retrieve('Resultats_RGN',limit=5)
+							'name': 1, 'location': 1, 'testers': 1, '_id': 0})
+case = document.retrieve('Resultats_RGN',limit=5)
+test_case = [c for c in case if c['testers'] & (1<<2)]
 pprint.pprint(test_case)
 
 update_dic['updates'] = [{

@@ -222,22 +222,22 @@ def expert_init():
 	if not experts.mongocheck('Resultats_Tests'):
 		db_list = [{
 						'user_id': 'NDebart',
-						'code': 1,
+						'code': 0,
 						'num_answers': 0
 				   },
 				   {
 				   		'user_id': 'SDjebrouni',
-				   		'code': 2,
+				   		'code': 1,
 				   		'num_answers': 0
 				   },
 				   {
 				   		'user_id': 'TFau',
-				   		'code': 4,
+				   		'code': 2,
 				   		'num_answers': 0
 				   },
 				   {
 				   		'user_id': 'MMashra',
-				   		'code': 8,
+				   		'code': 3,
 				   		'num_answers': 0
 				   }]
 		experts.reinit(db_list)
@@ -251,12 +251,13 @@ def get_results():
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
 	test_code = dbfinder.retrieve('Resultats_Tests',limit=1)[0]['code']
-	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value, 'testers': test_code},
+	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
+					 'testers': { '$gte': 2**test_code}},
 					{'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
-					 'name': 1, 'location': 1, 'testers': 1, '_id': 0},
-					{'op': '$gte', 'field': 'testers', 'value': test_code})
+					 'name': 1, 'location': 1, 'testers': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
-	return json.dumps(doc_list)
+	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
+	return json.dumps(test_list)
 
 
 if __name__ == '__main__' :

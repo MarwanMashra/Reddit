@@ -123,11 +123,16 @@ class MongoUpd(Mongo):
 
 
 """Recherche et extraction d'un document: format paramètres:
-La requête (simple ou avec opérateurs de comparaisons):
+La requête:
 {
 	<champs>: <valeur>,
 	...
-	<champs>: <valeur>
+	<champs>: { <opérateur>: <valeur> }
+	...
+	<opérateur logique>: [ <champs>: <valeur>
+						   ...
+						   <champs>: <valeur>
+						 ]
 }
 La projection par inclusion:
 {
@@ -143,31 +148,15 @@ OU par exclusion
 	<champs>: 0
 }
 Si on veut retourner tous les champs passer un dictionnaire vide en deuxième paramètre.
-Passer ensuite un dictionnaire pour chaque opérateur de comparaison (ou aucun si la
-requête n'utilise pas d'opérateurs):
-{
-	'op': <opérateur>
-	'field': <champs>
-	'value': <valeur de comparaison>
-}
-...
 """
 class MongoLoad(Mongo):
-	def __init__(self,dic_q,dic_p,*op_list):
+	def __init__(self,dic_q,dic_p):
 		self.query = dic_q
 		self.projection = dic_p
-		if op_list is None:
-			self.operators = []
-		else:
-			self.operators = op_list
 
-	def reinit(self,dic_q,dic_p,*op_list):
+	def reinit(self,dic_q,dic_p):
 		self.query = dic_q
 		self.projection = dic_p
-		if op_list is None:
-			self.operators = []
-		else:
-			self.operators = op_list
 
 	def mongo_connect(self):
 		return super().mongo_connect()
@@ -175,8 +164,6 @@ class MongoLoad(Mongo):
 	def retrieve(self,coll_tosearch,limit=0):
 		reddit = self.mongo_connect()
 		coll = reddit[coll_tosearch]
-		for op in self.operators:
-			self.query[op['field']] = { op['op']: op['value']}
 		if not self.projection and limit == 0:
 			return list(coll.find(self.query))
 		elif not self.projection:
