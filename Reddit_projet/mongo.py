@@ -22,6 +22,7 @@ class Mongo(abc.ABC):
 		else:
 			return False
 
+
 """Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
 pas obligatoire.
@@ -79,13 +80,13 @@ newvalue, qui contient la nouvelle valeur du champs, et url, une liste des 'img_
 différentes clés 'field'), si on veut mettre à jour un champs avec des valeurs différentes selon
 le document.
 {
-	search_version: <string>
-	updates:
+	'search_version': <string version>
+	'updates':
 	[
 		{
-			field: <champs à modifier>
-			newvalue: <nouvelle valeur du champs>
-			url: [img_url du doc A1,...,img_url du doc An]
+			'field': <champs à modifier>
+			'newvalue': <nouvelle valeur du champs>
+			'url': [img_url du doc A1,...,img_url du doc An]
 		}
 		{
 			...
@@ -122,35 +123,51 @@ class MongoUpd(Mongo):
 
 
 """Recherche et extraction d'un document: format paramètres:
-La requête, simple pour le moment:
+La requête (simple ou avec opérateurs de comparaisons):
 {
 	<champs>: <valeur>,
 	...
 	<champs>: <valeur>
 }
-La projection (par inclusion):
+La projection par inclusion:
 {
 	<champs>: 1
 	...
 	<champs>: 1
-	(optionnel) '_id': 0
+	(optionnel) '_id': 0 (seul exclusion qui marche avec l'inclusion)
 }
-OU (par exclusion)
+OU par exclusion
 {
 	<champs>: 0
 	...
 	<champs>: 0
 }
-Si on veut retourner tous les champs, passer un dictionnaire vide.
+Si on veut retourner tous les champs passer un dictionnaire vide en deuxième paramètre.
+Passer ensuite un dictionnaire pour chaque opérateur de comparaison (ou aucun si la
+requête n'utilise pas d'opérateurs):
+{
+	'op': <opérateur>
+	'field': <champs>
+	'value': <valeur de comparaison>
+}
+...
 """
 class MongoLoad(Mongo):
-	def __init__(self,dic_q,dic_p):
+	def __init__(self,dic_q,dic_p,*op_list):
 		self.query = dic_q
 		self.projection = dic_p
+		if op_list is None:
+			self.operators = []
+		else:
+			self.operators = op_list
 
-	def reinit(self,dic_q,dic_p):
+	def reinit(self,dic_q,dic_p,*op_list):
 		self.query = dic_q
 		self.projection = dic_p
+		if op_list is None:
+			self.operators = []
+		else:
+			self.operators = op_list
 
 	def mongo_connect(self):
 		return super().mongo_connect()
@@ -158,7 +175,13 @@ class MongoLoad(Mongo):
 	def retrieve(self,coll_tosearch,limit=0):
 		reddit = self.mongo_connect()
 		coll = reddit[coll_tosearch]
-		if limit == 0:
+		for op in self.operators:
+			self.query[op['field']] = { op['op']: op['value']}
+		if not self.projection and limit == 0:
+			return list(coll.find(self.query))
+		elif not self.projection:
+			return list(coll.find(self.query,limit=limit))
+		elif limit == 0:
 			return list(coll.find(self.query,self.projection))
 		else:
 			return list(coll.find(self.query,self.projection,limit=limit))

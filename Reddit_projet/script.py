@@ -247,9 +247,14 @@ def expert_init():
 @app.route('/get_results',methods=['GET','POST'])
 def get_results():
 	result_value = request.args.get('value')
-	dbfinder = mongo.MongoLoad({'search_version': '1.00', 'test_result': result_value},
-						   	   {'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
-							  	'name': 1, 'location': 1, '_id': 0})
+	tester = request.args.get('tester')
+	dbfinder = mongo.MongoLoad({'user_id': tester},
+							   {'code': 1, '_id': 0})
+	test_code = dbfinder.retrieve('Resultats_Tests',limit=1)[0]['code']
+	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value, 'testers': test_code},
+					{'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
+					 'name': 1, 'location': 1, 'testers': 1, '_id': 0},
+					{'op': '$gte', 'field': 'testers', 'value': test_code})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	return json.dumps(doc_list)
 
