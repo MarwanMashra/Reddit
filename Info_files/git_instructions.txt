@@ -17,7 +17,7 @@ git push origin <nom_de_branche>
 	Push le contenu du dépôt local sur la branche.
 
 git checkout master
-git merge develop
+git merge <nom_de_branche>
 git push origin master
 	Merge la branche personnelle locale avec le master local, puis push sur le master distant.
 
