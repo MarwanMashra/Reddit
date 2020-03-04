@@ -244,6 +244,12 @@ def expert_init():
 		experts.storeindb('Resultats_Tests',user_id='A')
 
 
+@app.route('/')
+@app.route('/test')
+@app.route('/test.html')
+def test():
+	return render_template('test.html')
+
 @app.route('/get_results',methods=['GET','POST'])
 def get_results():
 	result_value = request.args.get('value')
@@ -253,8 +259,7 @@ def get_results():
 	test_code = dbfinder.retrieve('Resultats_Tests',limit=1)[0]['code']
 	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
 					 'testers': { '$gte': 2**test_code}},
-					{'search_version': 1, 'country': 1, 'title': 1, 'location_list': 1,
-					 'name': 1, 'location': 1, 'testers': 1, '_id': 0})
+					{})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
 	return json.dumps(test_list)
