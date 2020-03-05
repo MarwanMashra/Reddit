@@ -16,9 +16,11 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
     <!-- Veuillez mettre le bon chemin vers les fichier dans votre localhost -->
-    <script src="http://localhost/Reddit_projet/templates/pays.js"></script>
-    <script src="http://localhost/Reddit_projet/templates/map.js"></script>
-    <link rel="stylesheet" type="text/css" href="http://localhost/Reddit_projet/templates/map.css">
+    
+ 
+        <link href="{{url_for('static', filename = 'map.css')}}" rel="stylesheet">
+        <script src="{{url_for('static', filename = 'map.js')}}"></script>
+        <script src="{{url_for('static', filename = 'pays.js')}}"></script>
     
 
 </head>
