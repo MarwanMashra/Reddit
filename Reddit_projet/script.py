@@ -248,7 +248,7 @@ def expert_init():
 @app.route('/test')
 @app.route('/test.html')
 def test():
-	return render_template('test.html')
+	return render_template('test-expert.html')
 
 @app.route('/get_results',methods=['GET','POST'])
 def get_results():
@@ -259,10 +259,10 @@ def get_results():
 	test_code = dbfinder.retrieve('Resultats_Tests',limit=1)[0]['code']
 	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
 					 'testers': { '$gte': 2**test_code}},
-					{})
+					{'search_version': 1, 'img_url': 1, 'title': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
-	return json.dumps(test_list)
+	return jsonify(test_list)
 
 
 if __name__ == '__main__' :

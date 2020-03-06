@@ -150,11 +150,11 @@ OU par exclusion
 Si on veut retourner tous les champs passer un dictionnaire vide en deuxième paramètre.
 """
 class MongoLoad(Mongo):
-	def __init__(self,dic_q,dic_p):
+	def __init__(self,dic_q,dic_p={'_id': 0}):
 		self.query = dic_q
 		self.projection = dic_p
 
-	def reinit(self,dic_q,dic_p):
+	def reinit(self,dic_q,dic_p={'_id': 0}):
 		self.query = dic_q
 		self.projection = dic_p
 
