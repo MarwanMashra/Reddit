@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper
+import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper, urllib
 from flask import Flask, render_template, request, jsonify
 
 #This code attempts to conform to PEP8
@@ -216,53 +216,71 @@ def scraping():
 	return jsonify(dic_results)	#Renvoyer directement un objet JSON
 
 
-@app.route('/expert_init',methods=['GET','POST'])
-def expert_init():
-	experts = mongo.MongoSave([])
-	if not experts.mongocheck('Resultats_Tests'):
-		db_list = [{
-						'user_id': 'NDebart',
-						'code': 0,
-						'num_answers': 0
-				   },
-				   {
-				   		'user_id': 'SDjebrouni',
-				   		'code': 1,
-				   		'num_answers': 0
-				   },
-				   {
-				   		'user_id': 'TFau',
-				   		'code': 2,
-				   		'num_answers': 0
-				   },
-				   {
-				   		'user_id': 'MMashra',
-				   		'code': 3,
-				   		'num_answers': 0
-				   }]
-		experts.reinit(db_list)
-		experts.storeindb('Resultats_Tests',user_id='A')
-
 
 @app.route('/')
 @app.route('/test')
-@app.route('/test.html')
+@app.route('/test-expert.html')
 def test():
 	return render_template('test-expert.html')
 
-@app.route('/get_results',methods=['GET','POST'])
+"""Création de la collection des testeurs experts dans la base de données
+mongoDB.
+"""
+@app.route('/expert_init',methods=['GET'])
+def expert_init():
+	experts = mongo.MongoSave([])
+	if not experts.mongocheck('Testeurs'):
+		db_list = [{'user_id': 'NDebart', 'code': 0, 'num_answers': 0},
+				   {'user_id': 'SDjebrouni', 'code': 1, 'num_answers': 0},
+				   {'user_id': 'TFau', 'code': 2, 'num_answers': 0},
+				   {'user_id': 'MMashra', 'code': 3, 'num_answers': 0}]
+		experts.reinit(db_list)
+		experts.storeindb('Testeurs',user_id='A')
+	status = {'status': 'OK'}
+	return jsonify(status)
+
+
+"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
+de la base de données, en fonction du testeur qui a lancé la requête, et renvoie en format
+JSON des résultats à la page de tests.
+"""
+@app.route('/get_results',methods=['GET'])
 def get_results():
 	result_value = request.args.get('value')
 	tester = request.args.get('tester')
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve('Resultats_Tests',limit=1)[0]['code']
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
 	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
 					 'testers': { '$gte': 2**test_code}},
-					{'search_version': 1, 'img_url': 1, 'title': 1, '_id': 0})
+					{'search_version': 1, 'img_url': 1, 'title': 1, 'testers': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
-	return jsonify(test_list)
+	#On veut passer le code testeur pour l'avoir au retour du test
+	dic_results = {'tester': tester, 'results': test_list}
+	return jsonify(dic_results)
+
+
+"""Réception des résultats du test-expert et stockage dans la base de données;
+décrémentation de la champ 'testers' des documents qui viennent d'être testés
+de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
+testeur dans la collection 'Testeurs'.
+"""
+@app.route('/send_results',methods=['POST'])
+def send_results():
+	#La méthode POST renvoie des bytes: convertir en string puis en JSON
+	response = json.loads(request.data.decode('utf-8'))
+	#pprint.pprint(response)
+	documents = mongo.MongoSave(response['results'])
+	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
+	update = mongo.MongoUpd({
+								'update': 'num_answers',
+								'newvalue': 1,
+								'id_field': {'name': 'user_id','values': [response['tester'].strip('"')]}
+							})
+	update.updatedb('Testeurs','$inc')
+	status = {'status': 'OK'}
+	return jsonify(status)
 
 
 if __name__ == '__main__' :
