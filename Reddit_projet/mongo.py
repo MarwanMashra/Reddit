@@ -115,7 +115,6 @@ class MongoSave(Mongo):
 		name: <nom du champs unique> #par exemple search_version
 		value: <valeur du champs unique>
 }
-*index: chaque champs indexé par son nom (string).
 """
 class MongoUpd(Mongo):
 	def __init__(self,dic):

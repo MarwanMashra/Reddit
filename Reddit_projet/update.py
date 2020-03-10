@@ -6,8 +6,10 @@ import mongo, pprint
 
 #SCRIPT TEST
 
+"""Classe de mise à jour simplifiée et plus générique.
+On fait une mise à jour seulement sur un champs, avec une nouvelle valeur.
+"""
 update_dic = {}
-#Les deux clés doivent être présentes
 update_dic['search_version'] = '1.00'
 update_dic['update'] = 'test_result'
 update_dic['newvalue'] = 'OK'

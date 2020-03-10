@@ -271,14 +271,29 @@ def send_results():
 	#La méthode POST renvoie des bytes: convertir en string puis en JSON
 	response = json.loads(request.data.decode('utf-8'))
 	#pprint.pprint(response)
+	tester = response['tester'].strip('"')
 	documents = mongo.MongoSave(response['results'])
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 	update = mongo.MongoUpd({
 								'update': 'num_answers',
 								'newvalue': 1,
-								'id_field': {'name': 'user_id','values': [response['tester'].strip('"')]}
+								'id_field': {'name': 'user_id','values': [tester]}
 							})
 	update.updatedb('Testeurs','$inc')
+	dbfinder = mongo.MongoLoad({'user_id': tester},
+							   {'code': 1, '_id': 0})
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
+	version = response['results'][0]['search_version']
+	url_list = []
+	for dic in response['results']:
+		url_list.append(dic['img_url'])
+	update.reinit({
+					'update': 'testers',
+					'newvalue': (-1)*(2**test_code),
+					'id_field': {'name': 'img_url', 'values': url_list},
+					'other_field': {'name': 'search_version', 'value': version} 
+				 })
+	update.updatedb('Resultats_RGN','$inc')
 	status = {'status': 'OK'}
 	return jsonify(status)
 
