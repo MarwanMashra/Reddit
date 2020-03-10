@@ -74,6 +74,8 @@ class MongoSave(Mongo):
 		return super().mongo_connect()
 
 	def storeindb(self,coll_tostore,**index):
+		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
+			return
 		reddit = self.mongo_connect()
 		coll = reddit[coll_tostore]
 		index_list = []

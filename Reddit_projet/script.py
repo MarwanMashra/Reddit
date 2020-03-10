@@ -236,8 +236,7 @@ def expert_init():
 				   {'user_id': 'MMashra', 'code': 3, 'num_answers': 0}]
 		experts.reinit(db_list)
 		experts.storeindb('Testeurs',user_id='A')
-	status = {'status': 'OK'}
-	return jsonify(status)
+	return jsonify({'status': 'OK'})
 
 
 """Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
@@ -257,8 +256,7 @@ def get_results():
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
 	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
 	#On veut passer le code testeur pour l'avoir au retour du test
-	dic_results = {'tester': tester, 'results': test_list}
-	return jsonify(dic_results)
+	return jsonify({'tester': tester, 'results': test_list})
 
 
 """Réception des résultats du test-expert et stockage dans la base de données;
@@ -294,8 +292,7 @@ def send_results():
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
 	update.updatedb('Resultats_RGN','$inc')
-	status = {'status': 'OK'}
-	return jsonify(status)
+	return jsonify({'status': 'OK'})
 
 
 if __name__ == '__main__' :
