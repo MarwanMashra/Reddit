@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper, urllib
-from flask import Flask, render_template, request, jsonify
+import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper, time, bcrypt, urllib
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 
 #This code attempts to conform to PEP8
 
@@ -32,10 +32,8 @@ def dicload(res_dic, store_dic, opt_loc=None):
 """Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
 la fonction locationsearch. D'abord recherche d'un match exact, en privilégiant les lieux
 naturels plutôt qu'humains; sinon choix du premier résultat de recherche.
-
 Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
 tous les résultats, et dans un dico qui sera enregistré dans la base de données.
-
 Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
 la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
 """
@@ -101,18 +99,143 @@ app= Flask(__name__)
 @app.route('/')
 @app.route('/map')
 @app.route('/map.html')
-def home():
+def map():
+	if 'username' in session:
+		return render_template('map.html',username=session['username'])
 	return render_template('map.html')
+
+
+
+@app.route('/connexion',methods=['GET','POST'])
+@app.route('/connexion.html',methods=['GET','POST'])
+def connexion():
+	if request.method == 'POST':
+		pseudo_email=request.form['pseudo_email']
+		password = request.form['password']
+		
+		#chercher le compte en supposons que c'est le pseudo
+		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
+
+		#si comptre pas trouvé, chercher le compte en supposons que c'est le pseudo
+		if not compte:
+			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
+
+		#si compte trouvé	
+		if compte:
+			compte = compte[0]
+			#vérifier le mot de passe checkpw(password, hashed)
+			if bcrypt.hashpw(password.encode('utf-8'),compte['password']) == compte['password']:
+
+				#cookies
+				session['username']=compte['pseudo']
+				session['admin?'] = ( compte['admin?'] == "YES" )
+				if (session['admin?']):
+					return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+				else:
+					return redirect(url_for('map'))
+					
+		#pseudo,email ou mot de passe invalide
+		error="Le pseudo/email ou le mot de passe n'est pas valide"
+		return render_template('connexion.html',error=error)
+			
+	elif 'username' in session:
+		if session['admin?']:
+			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+		else:
+			return redirect(url_for('map'))
+
+	else:
+		return render_template('connexion.html')
+
+
+
+
+@app.route('/inscription.html',methods=['GET','POST'])
+@app.route('/inscription',methods=['GET','POST'])
+def inscription():
+	
+	if request.method == 'POST':
+
+		pseudo = request.form['pseudo']
+		email = request.form['email']
+		password = request.form['password']
+		password_confirmation = request.form['password_confirmation']
+		is_admin = ('admin' in request.form)
+
+		exesting_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
+		exesting_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
+
+		if exesting_name:
+			error = "Le pseudo est déjà utilisé, veuillez choisir un autre"
+
+		elif exesting_mail:
+			error = "Cette adresse mail est déjà utilisée, veuillez vous-connectez"
+
+		elif password != password_confirmation:
+			error = "Les deux mots de passes sont différentes"
+
+		else:
+
+			#cookies
+			session['username']=pseudo
+			session['admin?']= is_admin   
+
+			#cryptage du mot de passe
+			hashpass= bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
+			
+			#stockage dans mongoDB
+			dic = {}
+			dic['pseudo']=pseudo
+			dic['email']=email
+			dic['password']=hashpass
+			if session['admin?']:
+				dic['admin?']="YES"
+			else:
+				dic['admin?']="NO"
+			listdb= []
+			listdb.append(dic)
+			documents = mongo.MongoSave(listdb)
+			documents.storeindb('users_accounts')
+
+			
+
+			if (session['admin?']):
+				#appel de la fonction qui crée le compte admin
+				return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+
+			else:
+				return redirect(url_for('map'))
+
+		return render_template("inscription.html",error=error)
+
+	elif 'username' in session:
+		if session['admin?']:
+			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+		else:
+			return redirect(url_for('map'))
+
+	else:
+		return render_template('inscription.html')
+
+
+@app.route('/deconnexion')
+def deconnexion():
+	session.clear()
+	return redirect(url_for('connexion'))		
+
+		
+
 
 #La fonction appelée par la requête Javascript
 @app.route('/scraping',methods=['GET','POST'])
 def scraping():
+
 	#Configuration du scraper, ne pas modifier
 	reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
 		   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
 	#Configuration recherche reddit
-	rgnversion = '1.00'
+	rgnversion = '1.00'                      
 	target_sub = reddit.subreddit('EarthPorn')
 	#Paramètres de la requête Javascript
 	country = request.args.get('country')
@@ -188,9 +311,31 @@ def scraping():
 						dic_mongo['title'] = res.group(1).strip()
 						dic_mongo['tag_list'] = reddit_tags
 						dic_mongo['location_list'] = location_list
+
+
 						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
 						dic_tmp['img'] = post.url
 						dic_tmp['search_version'] = rgnversion
+						#passer l'url vers le post
+						dic_tmp['url']="https://www.reddit.com"+post.permalink
+
+						#passer la date 
+						date = time.gmtime(post.created_utc)
+						dic_tmp['date']={}
+						dic_tmp['date']['year']=date.tm_year
+						dic_tmp['date']['month']=date.tm_mon
+						dic_tmp['date']['day']=date.tm_mday
+						dic_tmp['date']['hour']=date.tm_hour
+						dic_tmp['date']['min']=date.tm_min
+						dic_tmp['date']['sec']=date.tm_sec
+
+						#passer l'author
+						dic_tmp['author']={}	
+						dic_tmp['author']['name']=post.author.name
+						dic_tmp['author']['icon']=post.author.icon_img
+						dic_tmp['author']['profile']="https://www.reddit.com/user/"+post.author.name
+
+
 						for loc in location_list:
 							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
 								break
@@ -215,11 +360,8 @@ def scraping():
 	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
 	return jsonify(dic_results)	#Renvoyer directement un objet JSON
 
-
-
-@app.route('/')
 @app.route('/test')
-@app.route('/test-expert.html')
+@app.route('/test.html')
 def test():
 	return render_template('test-expert.html')
 
@@ -236,7 +378,7 @@ def expert_init():
 				   {'user_id': 'MMashra', 'code': 3, 'num_answers': 0}]
 		experts.reinit(db_list)
 		experts.storeindb('Testeurs',user_id='A')
-	return jsonify({'status': 'OK'})
+	return jsonify(status='OK')
 
 
 """Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
@@ -264,7 +406,7 @@ décrémentation de la champ 'testers' des documents qui viennent d'être testé
 de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
 testeur dans la collection 'Testeurs'.
 """
-@app.route('/send_results',methods=['POST'])
+@app.route('/send_results',methods=['GET','POST'])
 def send_results():
 	#La méthode POST renvoie des bytes: convertir en string puis en JSON
 	response = json.loads(request.data.decode('utf-8'))
@@ -292,8 +434,9 @@ def send_results():
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
 	update.updatedb('Resultats_RGN','$inc')
-	return jsonify({'status': 'OK'})
-
+	return jsonify(status='OK')
 
 if __name__ == '__main__' :
+	app.secret_key="mysecret"
 	app.run(debug=True,port=5000)
+
