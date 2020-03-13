@@ -93,6 +93,11 @@ def locationsearch(location_list, p_iter):
 				location = ''
 
 
+"""A partir de l'inscription d'un utilisateur en tant qu'admin, la fonction crée
+un profil testeur pour cet utilisateur dans la collection 'Testeurs' de la base
+de données. Chaque testeur reçoit un code unique qui sert à identifier les documents
+de 'Resultats_RGN' qu'il/elle doit tester.
+"""
 def db_tester(username):
 	dbloader = mongo.MongoSave([])
 	next_code = 0
@@ -121,13 +126,13 @@ def map():
 @app.route('/connexion.html',methods=['GET','POST'])
 def connexion():
 	if request.method == 'POST':
-		pseudo_email=request.form['pseudo_email']
+		pseudo_email = request.form['pseudo_email']
 		password = request.form['password']
 		
 		#Chercher le compte en supposant que c'est le pseudo
 		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
 
-		#Si comptre pas trouvé, chercher le compte en supposant que c'est le pseudo
+		#Si compte pas trouvé, chercher le compte en supposant que c'est le mail
 		if not compte:
 			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
 
@@ -146,7 +151,7 @@ def connexion():
 					return redirect(url_for('map'))
 					
 		#Pseudo,email ou mot de passe invalide
-		error="Le pseudo/email ou le mot de passe n'est pas valide"
+		error = 'Le pseudo/email ou le mot de passe n\'est pas valide'
 		return render_template('connexion.html',error=error)
 			
 	elif 'username' in session:
@@ -163,8 +168,7 @@ def connexion():
 
 @app.route('/inscription.html',methods=['GET','POST'])
 @app.route('/inscription',methods=['GET','POST'])
-def inscription():
-	
+def inscription():	
 	if request.method == 'POST':
 		pseudo = request.form['pseudo']
 		email = request.form['email']
@@ -191,19 +195,18 @@ def inscription():
 			hashpass= bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
 			
 			#Stockage dans mongoDB
-			dic = {}
-			dic['pseudo'] = pseudo
-			dic['email'] = email
-			dic['password'] = hashpass
+			dic = {
+					'pseudo': pseudo,
+					'email': email,
+					'password': hashpass
+				  }
 			if session['admin?']:
 				dic['admin?'] = 'YES'
 				db_tester(session['username']) #Création d'un profil testeur
 			else:
 				dic['admin?'] = 'NO'
-			listdb = []
-			listdb.append(dic)
-			documents = mongo.MongoSave(listdb)
-			documents.storeindb('users_accounts')
+			documents = mongo.MongoSave([dic])
+			documents.storeindb('users_accounts',pseudo='A',email='A')
 
 			if (session['admin?']):
 				#Appel de la fonction qui crée le compte admin
@@ -287,107 +290,95 @@ def scraping():
 				pprint.pprint(reddit_tags)
 
 				#Recherche des lieux potentiels
-				if (country.lower() in (t[2].lower() for t in reddit_tags)):  #Garantir la présence du mot 'NomDuPays'
+				location_list = []
+				if country.lower() in [t[2].lower() for t in reddit_tags]:  #Si le mot 'NomDuPays' est présent
 					title_split = [t[2].lower() for t in reddit_tags].index(country.lower())
-					location_list = []
 					#Recherche prioritaire du lieu: la liste jusqu'au mot 'NomDuPays'
 					locationsearch(location_list,more_itertools.peekable(reddit_tags[:title_split]))
 					#Priorité secondaire: la liste à la suite du mot 'NomDuPays'
 					if len(reddit_tags) > title_split+1:
 						locationsearch(location_list,more_itertools.peekable(reddit_tags[title_split+1:]))
-					#Priorité tertiaire: commentaire(s) du redditor qui a posté la photo
-					"""
-					for comment in post.comments.list(): #Liste du parcours en largeur de l'arborescence de commentaires
-						if isinstance(comment,praw.models.MoreComments): #On ignore les objets MoreComments
-							continue
-						if comment.is_submitter:
-							comment_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(comment.body),
-										   exclude_nottags=True)
-							locationsearch(location_list,more_itertools.peekable(comment_tags))
-					"""
-					print('Lieux trouvés:',end='')
-					pprint.pprint(location_list)
-					print('')
+				else:
+					locationsearch(location_list,more_itertools.peekable(reddit_tags))
+				#Priorité tertiaire: commentaire(s) du redditor qui a posté la photo
+				"""
+				for comment in post.comments.list(): #Liste du parcours en largeur de l'arborescence de commentaires
+					if isinstance(comment,praw.models.MoreComments): #On ignore les objets MoreComments
+						continue
+					if comment.is_submitter:
+						comment_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(comment.body),
+									   exclude_nottags=True)
+						locationsearch(location_list,more_itertools.peekable(comment_tags))
+				"""
+				print('Lieux trouvés:',end='')
+				pprint.pprint(location_list)
+				print('')
 
-					#GeoNames
-					if location_list:
-						dic_mongo = {
-										'link': post.permalink,
-										'img_url': post.url, #Lien direct vers la photo
-										'search_version': rgnversion,
-										'country': country,
-										'title': res.group(1).strip(),
-										'tag_list': reddit_tags,
-										'location_list': location_list
-									}
-
-						#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-						date = time.gmtime(post.created_utc)
-						dic_tmp = {
-									'img': post.url,
+				#GeoNames
+				if location_list:
+					dic_mongo = {
+									'link': post.permalink,
+									'img_url': post.url, #Lien direct vers la photo
 									'search_version': rgnversion,
-									'url': 'https://www.reddit.com'+post.permalink, #Passer l'url du post
-									#Stocker la date
-									'date': {
-												'year': date.tm_year,
-												'month': date.tm_mon,
-												'day': date.tm_mday,
-												'hour': date.tm_hour,
-												'min': date.tm_min,
-												'sec': date.tm_sec
-											},
-									#Stocker l'auteur
-									'author': {
-												'name': post.author.name,
-												'icon': post.author.icon_img,
-												'profile': 'https://www.reddit.com/user/'+post.author.name
-											  }
-								  }
+									'country': country,
+									'title': res.group(1).strip(),
+									'tag_list': reddit_tags,
+									'location_list': location_list
+								}
 
+					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
+					date = time.gmtime(post.created_utc)
+					dic_tmp = {
+								'img': post.url,
+								'search_version': rgnversion,
+								'url': 'https://www.reddit.com'+post.permalink, #Passer l'url du post
+								#Stocker la date
+								'date': {
+											'year': date.tm_year,
+											'month': date.tm_mon,
+											'day': date.tm_mday,
+											'hour': date.tm_hour,
+											'min': date.tm_min,
+											'sec': date.tm_sec
+										},
+								#Stocker l'auteur
+								'author': {
+											'name': post.author.name,
+											'icon': post.author.icon_img,
+											'profile': 'https://www.reddit.com/user/'+post.author.name
+										  }
+							  }
+
+					for loc in location_list:
+						if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
+							break
+					#Pas de match exact après avoir parcouru toute la liste: on prend le premier résultat
+					if 'name' not in dic_tmp:
 						for loc in location_list:
-							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
+							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo):
 								break
-						#Pas de match exact après avoir parcouru toute la liste: on prend le premier résultat
-						if 'name' not in dic_tmp:
-							for loc in location_list:
-								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo):
-									break
-						#Pas de résultat: on passe à une fuzzy search
-						if 'name' not in dic_tmp:
-							for loc in location_list:
-								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
-									break
-						if 'location' in dic_mongo:
-							dic_tostore = copy.deepcopy(dic_mongo)
-							database_list.append(dic_tostore)
-						print('\n###############')
-					else:
-						print('')
+					#Pas de résultat: on passe à une fuzzy search
+					if 'name' not in dic_tmp:
+						for loc in location_list:
+							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
+								break
+					if 'location' in dic_mongo:
+						dic_tostore = copy.deepcopy(dic_mongo)
+						database_list.append(dic_tostore)
+					print('\n###############')
+				else:
+					print('')
 	#Chargement dans la base de données
 	documents = mongo.MongoSave(database_list)
 	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
 	return jsonify(dic_results)	#Renvoyer directement un objet JSON
 
+
+
 @app.route('/test')
 @app.route('/test.html')
 def test():
 	return render_template('test-expert.html')
-
-"""Création de la collection des testeurs experts dans la base de données
-mongoDB.
-"""
-@app.route('/expert_init',methods=['GET'])
-def expert_init():
-	experts = mongo.MongoSave([])
-	if not experts.mongocheck('Testeurs'):
-		db_list = [{'user_id': 'NDebart', 'code': 0, 'num_answers': 0},
-				   {'user_id': 'SDjebrouni', 'code': 1, 'num_answers': 0},
-				   {'user_id': 'TFau', 'code': 2, 'num_answers': 0},
-				   {'user_id': 'MMashra', 'code': 3, 'num_answers': 0}]
-		experts.reinit(db_list)
-		experts.storeindb('Testeurs',user_id='A')
-	return jsonify(status='OK')
-
 
 """Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
 de la base de données, en fonction du testeur qui a lancé la requête, et renvoie en format
@@ -396,17 +387,18 @@ JSON des résultats à la page de tests.
 @app.route('/get_results',methods=['GET'])
 def get_results():
 	result_value = request.args.get('value')
-	tester = request.args.get('tester')
+	version = request.args.get('version')
+	limit = request.args.get('limit')
+	tester = session['username']
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
 	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
-	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
-					 'testers': { '$gte': 2**test_code}},
-					{'search_version': 1, 'img_url': 1, 'title': 1, 'testers': 1, '_id': 0})
-	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
-	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
-	#On veut passer le code testeur pour l'avoir au retour du test
-	return jsonify({'tester': tester, 'results': test_list})
+	dbfinder.reinit({'search_version': version, 'test_result': result_value,
+					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
+					{'search_version': 1, 'img_url': 1, 'tag_list': 1, 'location_list': 1,
+					 'location': 1, 'name': 1, '_id': 0})
+	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
+	return jsonify({'results': doc_list})
 
 
 """Réception des résultats du test-expert et stockage dans la base de données;
@@ -414,7 +406,7 @@ décrémentation de la champ 'testers' des documents qui viennent d'être testé
 de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
 testeur dans la collection 'Testeurs'.
 """
-@app.route('/send_results',methods=['GET','POST'])
+@app.route('/send_results',methods=['POST'])
 def send_results():
 	#La méthode POST renvoie des bytes: convertir en string puis en JSON
 	response = json.loads(request.data.decode('utf-8'))
