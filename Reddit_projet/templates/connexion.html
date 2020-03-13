@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Connexion</title>
+	<meta charset="utf-8">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'inscription.css') }}">
+
+</head>
+<body>
+      <div class="container">
+            
+           <div class="row justify-content-center">
+                  <div class="subcontainer" >
+                        <form action="{{ url_for('connexion') }}" method="post" class="form" id="formId">
+
+                              <h3 class="text-center" >Connexion</h3>
+                              
+                              <div class="row">
+                                    <label for="pseudo" class="label col-md-3 col-lg-3 col-sm-3 col-xs-3 " >Pseudo ou Email</label>
+                                    <div class="col-md-9 col-lg-9 col-sm-9 col-xs-9">
+                                          <input type="text" name="pseudo_email" id="pseudo_email" class="form-control" placeholder="Pseudo ou Email" autocomplete="off" required>
+                                    </div>
+                              </div>
+
+                             <div class="row">
+                                    <label for="password" class="label col-md-3 col-lg-3 col-sm-3 col-xs-3 ">Mot de passe</label>
+                                    <div class="col-md-9 col-lg-9 col-sm-9 col-xs-9">
+                                          <input type="password" name="password" id="password" class="form-control" placeholder="Mot de passe" required>
+                                    </div>
+                              </div>
+
+            
+                              <button class="btn btn-info" type="submit" form="formId" value="Submit">Se connecter</button>
+                              <span id="url_connexion">Ou <a href="{{ url_for('inscription') }}">inscrivez-vous</a></span>
+                              {% if error %}
+                                 <br><span id="error_message">*{{ error }}</span>
+                              {% endif %}
+
+	                 </form>
+	           </div>
+            </div>
+      </div>
+
+      <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
