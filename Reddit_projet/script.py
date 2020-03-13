@@ -1,0 +1,442 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
+import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper, time, bcrypt, urllib
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+
+#This code attempts to conform to PEP8
+
+"""Feature classes ('fcl')
+	A   Administrative divisions
+	H   Surface waters
+	L   Parks/reserves
+	P   Populated places
+	R   Roads
+	S   Structures
+	T   Mountains/Islands
+	U   Undersea
+	V   Woodlands
+"""
+
+
+"""Stockage dans un dictionnaire des informations sur le résultat geonames."""
+def dicload(res_dic, store_dic, opt_loc=None):
+	store_dic['name'] = res_dic['name']
+	store_dic['lng'] = res_dic['lng']
+	store_dic['lat'] = res_dic['lat']
+	if opt_loc is not None:
+		store_dic['featureclass'] = res_dic['fcl']
+		store_dic['location'] = opt_loc
+
+
+"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
+la fonction locationsearch. D'abord recherche d'un match exact, en privilégiant les lieux
+naturels plutôt qu'humains; sinon choix du premier résultat de recherche.
+Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
+tous les résultats, et dans un dico qui sera enregistré dans la base de données.
+Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
+la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
+"""
+def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False):
+	url = 'http://api.geonames.org/searchJSON'
+	data = '?q='+location+'&country='+country_code+'&username=scrapelord'
+	if fuzzy:
+		data += '&fuzzy=0.8'
+	search_res = requests.get(url+data,auth=('scrapelord','Blorp86'))
+	if search_res.status_code == 200:
+		search_res = search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
+		if search_res['totalResultsCount'] != 0:
+			dic_results['head']['total'] += 1
+			print_res = '' #Pour affichage test
+			if exact:
+				prio_list = []
+				for res in search_res['geonames']:
+					if res['name'].lower() == location.lower():
+						if res['fcl'] in ['A','P','R','S'] and not prio_list:
+							prio_list.append(res)
+						elif res['fcl'] in ['H','L','T','U','V']:
+							prio_list.insert(0,res)
+							break
+				if prio_list:
+					dicload(prio_list[0],dic_tmp)
+					dicload(prio_list[0],dic_mongo,location)
+					print_res = prio_list[0]['name']
+				else:
+					return False
+			else:
+				dicload(search_res['geonames'][0],dic_tmp)
+				dicload(search_res['geonames'][0],dic_mongo,location)
+			dic_results['results'].append(dic_tmp)
+			print('Premier résultat Geonames: ',search_res['geonames'][0]['name'])
+			print('Meilleur résultat Geonames: ',print_res)
+			return True
+		else:
+			return False
+	else:
+		sys.exit("Erreur dans la recherche Geonames: code "+search_res.status_code+". Arrêt du programme.")
+
+
+"""Recherche de lieux potentiels par création de chaîne à partir des noms propres
+voisins (NP0 sous Linux, NP sous Windows). Ces lieux sont stockés dans une liste.
+La méthode peek() permet de regarder l'élément suivant de la liste. Elle prend un
+tuple par défaut qui sera consulté en fin d'itération pour ne pas causer une erreur
+de sortie de liste.
+La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
+"""
+def locationsearch(location_list, p_iter):
+	location = ''
+	for word,pos,lemma in p_iter:
+		if pos in ['NP0','NP'] and word[0].isalpha():
+			location += word+' '
+			if p_iter.peek(('end','end','end'))[1] not in ['NP0','NP']:
+				location_list.append(location.rstrip())
+				location = ''
+
+
+
+app= Flask(__name__)
+
+@app.route('/')
+@app.route('/map')
+@app.route('/map.html')
+def map():
+	if 'username' in session:
+		return render_template('map.html',username=session['username'])
+	return render_template('map.html')
+
+
+
+@app.route('/connexion',methods=['GET','POST'])
+@app.route('/connexion.html',methods=['GET','POST'])
+def connexion():
+	if request.method == 'POST':
+		pseudo_email=request.form['pseudo_email']
+		password = request.form['password']
+		
+		#chercher le compte en supposons que c'est le pseudo
+		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
+
+		#si comptre pas trouvé, chercher le compte en supposons que c'est le pseudo
+		if not compte:
+			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
+
+		#si compte trouvé	
+		if compte:
+			compte = compte[0]
+			#vérifier le mot de passe checkpw(password, hashed)
+			if bcrypt.hashpw(password.encode('utf-8'),compte['password']) == compte['password']:
+
+				#cookies
+				session['username']=compte['pseudo']
+				session['admin?'] = ( compte['admin?'] == "YES" )
+				if (session['admin?']):
+					return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+				else:
+					return redirect(url_for('map'))
+					
+		#pseudo,email ou mot de passe invalide
+		error="Le pseudo/email ou le mot de passe n'est pas valide"
+		return render_template('connexion.html',error=error)
+			
+	elif 'username' in session:
+		if session['admin?']:
+			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+		else:
+			return redirect(url_for('map'))
+
+	else:
+		return render_template('connexion.html')
+
+
+
+
+@app.route('/inscription.html',methods=['GET','POST'])
+@app.route('/inscription',methods=['GET','POST'])
+def inscription():
+	
+	if request.method == 'POST':
+
+		pseudo = request.form['pseudo']
+		email = request.form['email']
+		password = request.form['password']
+		password_confirmation = request.form['password_confirmation']
+		is_admin = ('admin' in request.form)
+
+		exesting_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
+		exesting_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
+
+		if exesting_name:
+			error = "Le pseudo est déjà utilisé, veuillez choisir un autre"
+
+		elif exesting_mail:
+			error = "Cette adresse mail est déjà utilisée, veuillez vous-connectez"
+
+		elif password != password_confirmation:
+			error = "Les deux mots de passes sont différentes"
+
+		else:
+
+			#cookies
+			session['username']=pseudo
+			session['admin?']= is_admin   
+
+			#cryptage du mot de passe
+			hashpass= bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
+			
+			#stockage dans mongoDB
+			dic = {}
+			dic['pseudo']=pseudo
+			dic['email']=email
+			dic['password']=hashpass
+			if session['admin?']:
+				dic['admin?']="YES"
+			else:
+				dic['admin?']="NO"
+			listdb= []
+			listdb.append(dic)
+			documents = mongo.MongoSave(listdb)
+			documents.storeindb('users_accounts')
+
+			
+
+			if (session['admin?']):
+				#appel de la fonction qui crée le compte admin
+				return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+
+			else:
+				return redirect(url_for('map'))
+
+		return render_template("inscription.html",error=error)
+
+	elif 'username' in session:
+		if session['admin?']:
+			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+		else:
+			return redirect(url_for('map'))
+
+	else:
+		return render_template('inscription.html')
+
+
+@app.route('/deconnexion')
+def deconnexion():
+	session.clear()
+	return redirect(url_for('connexion'))		
+
+		
+
+
+#La fonction appelée par la requête Javascript
+@app.route('/scraping',methods=['GET','POST'])
+def scraping():
+
+	#Configuration du scraper, ne pas modifier
+	reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
+		   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
+
+	#Configuration recherche reddit
+	rgnversion = '1.00'                      
+	target_sub = reddit.subreddit('EarthPorn')
+	#Paramètres de la requête Javascript
+	country = request.args.get('country')
+	country_code = request.args.get('country_code')
+	query = 'title:'+country
+	print('\033[92m'+target_sub.display_name+'\033[0m','\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
+
+	#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
+	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
+
+	#Dico stockant tous les résultats de recherche (results) + informations générales (head)
+	dic_results = {}
+	dic_results['head'] = {}
+	dic_results['head']['total'] = 0
+	dic_results['head']['country'] = {}
+	dic_results['head']['country']['name'] = country
+
+	#Coordonnées pays
+	search_res = requests.get('http://api.geonames.org/searchJSON?q='+country+'&username=scrapelord',
+				 auth=('scrapelord','Blorp86'))
+	search_res = search_res.json()
+	dic_results['head']['country']['lng'] = search_res['geonames'][0]['lng']
+	dic_results['head']['country']['lat'] = search_res['geonames'][0]['lat'] 
+	dic_results['results'] = []
+
+	#Liste de chargement pour la base de données
+	database_list = []
+
+	#Résultats de la recherche dans le subreddit
+	test_posts = target_sub.search(query,limit=15)
+	for post in test_posts:
+		if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+			#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
+			res = re.search('^(?:\[OC\])?([^[(]+)',post.title)
+			if (res):
+				print(res.group(1))
+
+				#Tagging
+				reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
+							  exclude_nottags=True)
+				#Liste de triplets: (word=..., pos=..., lemma=...)
+				pprint.pprint(reddit_tags)
+
+				#Recherche des lieux potentiels
+				if (country.lower() in (t[2].lower() for t in reddit_tags)):  #Garantir la présence du mot 'NomDuPays'
+					title_split = [t[2].lower() for t in reddit_tags].index(country.lower())
+					location_list = []
+					#Recherche prioritaire du lieu: la liste jusqu'au mot 'NomDuPays'
+					locationsearch(location_list,more_itertools.peekable(reddit_tags[:title_split]))
+					#Priorité secondaire: la liste à la suite du mot 'NomDuPays'
+					if len(reddit_tags) > title_split+1:
+						locationsearch(location_list,more_itertools.peekable(reddit_tags[title_split+1:]))
+					#Priorité tertiaire: commentaire(s) du redditor qui a posté la photo
+					for comment in post.comments.list(): #Liste du parcours en largeur de l'arborescence de commentaires
+						location = ''
+						if isinstance(comment,praw.models.MoreComments): #On ignore les objets MoreComments
+							continue
+						if comment.is_submitter:
+							comment_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(comment.body),
+										   exclude_nottags=True)
+							locationsearch(location_list,more_itertools.peekable(comment_tags))
+					print('Lieux trouvés:',end='')
+					pprint.pprint(location_list)
+					print('')
+
+					#GeoNames
+					if location_list:
+						dic_mongo = {}
+						dic_mongo['link'] = post.permalink
+						dic_mongo['img_url'] = post.url #Lien direct vers la photo
+						dic_mongo['search_version'] = rgnversion
+						dic_mongo['country'] = country
+						dic_mongo['title'] = res.group(1).strip()
+						dic_mongo['tag_list'] = reddit_tags
+						dic_mongo['location_list'] = location_list
+
+
+						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
+						dic_tmp['img'] = post.url
+						dic_tmp['search_version'] = rgnversion
+						#passer l'url vers le post
+						dic_tmp['url']="https://www.reddit.com"+post.permalink
+
+						#passer la date 
+						date = time.gmtime(post.created_utc)
+						dic_tmp['date']={}
+						dic_tmp['date']['year']=date.tm_year
+						dic_tmp['date']['month']=date.tm_mon
+						dic_tmp['date']['day']=date.tm_mday
+						dic_tmp['date']['hour']=date.tm_hour
+						dic_tmp['date']['min']=date.tm_min
+						dic_tmp['date']['sec']=date.tm_sec
+
+						#passer l'author
+						dic_tmp['author']={}	
+						dic_tmp['author']['name']=post.author.name
+						dic_tmp['author']['icon']=post.author.icon_img
+						dic_tmp['author']['profile']="https://www.reddit.com/user/"+post.author.name
+
+
+						for loc in location_list:
+							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
+								break
+						#Pas de match exact après avoir parcouru toute la liste: on prend le premier résultat
+						if 'name' not in dic_tmp:
+							for loc in location_list:
+								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo):
+									break
+						#Pas de résultat: on passe à une fuzzy search
+						if 'name' not in dic_tmp:
+							for loc in location_list:
+								if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
+									break
+						if 'location' in dic_mongo:
+							dic_tostore = copy.deepcopy(dic_mongo)
+							database_list.append(dic_tostore)
+						print('\n###############')
+					else:
+						print('')
+	#Chargement dans la base de données
+	documents = mongo.MongoSave(database_list)
+	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
+	return jsonify(dic_results)	#Renvoyer directement un objet JSON
+
+@app.route('/test')
+@app.route('/test.html')
+def test():
+	return render_template('test-expert.html')
+
+"""Création de la collection des testeurs experts dans la base de données
+mongoDB.
+"""
+@app.route('/expert_init',methods=['GET'])
+def expert_init():
+	experts = mongo.MongoSave([])
+	if not experts.mongocheck('Testeurs'):
+		db_list = [{'user_id': 'NDebart', 'code': 0, 'num_answers': 0},
+				   {'user_id': 'SDjebrouni', 'code': 1, 'num_answers': 0},
+				   {'user_id': 'TFau', 'code': 2, 'num_answers': 0},
+				   {'user_id': 'MMashra', 'code': 3, 'num_answers': 0}]
+		experts.reinit(db_list)
+		experts.storeindb('Testeurs',user_id='A')
+	return jsonify(status='OK')
+
+
+"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
+de la base de données, en fonction du testeur qui a lancé la requête, et renvoie en format
+JSON des résultats à la page de tests.
+"""
+@app.route('/get_results',methods=['GET'])
+def get_results():
+	result_value = request.args.get('value')
+	tester = request.args.get('tester')
+	dbfinder = mongo.MongoLoad({'user_id': tester},
+							   {'code': 1, '_id': 0})
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
+	dbfinder.reinit({'search_version': '1.00', 'test_result': result_value,
+					 'testers': { '$gte': 2**test_code}},
+					{'search_version': 1, 'img_url': 1, 'title': 1, 'testers': 1, '_id': 0})
+	doc_list = dbfinder.retrieve('Resultats_RGN',limit=5)
+	test_list = [doc for doc in doc_list if doc['testers'] & (1<<test_code)]
+	#On veut passer le code testeur pour l'avoir au retour du test
+	return jsonify({'tester': tester, 'results': test_list})
+
+
+"""Réception des résultats du test-expert et stockage dans la base de données;
+décrémentation de la champ 'testers' des documents qui viennent d'être testés
+de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
+testeur dans la collection 'Testeurs'.
+"""
+@app.route('/send_results',methods=['GET','POST'])
+def send_results():
+	#La méthode POST renvoie des bytes: convertir en string puis en JSON
+	response = json.loads(request.data.decode('utf-8'))
+	#pprint.pprint(response)
+	tester = response['tester'].strip('"')
+	documents = mongo.MongoSave(response['results'])
+	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
+	update = mongo.MongoUpd({
+								'update': 'num_answers',
+								'newvalue': 1,
+								'id_field': {'name': 'user_id','values': [tester]}
+							})
+	update.updatedb('Testeurs','$inc')
+	dbfinder = mongo.MongoLoad({'user_id': tester},
+							   {'code': 1, '_id': 0})
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
+	version = response['results'][0]['search_version']
+	url_list = []
+	for dic in response['results']:
+		url_list.append(dic['img_url'])
+	update.reinit({
+					'update': 'testers',
+					'newvalue': (-1)*(2**test_code),
+					'id_field': {'name': 'img_url', 'values': url_list},
+					'other_field': {'name': 'search_version', 'value': version} 
+				 })
+	update.updatedb('Resultats_RGN','$inc')
+	return jsonify(status='OK')
+
+if __name__ == '__main__' :
+	app.secret_key="mysecret"
+	app.run(debug=True,port=5000)
+
