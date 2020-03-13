@@ -53,6 +53,14 @@ class Mongo(abc.ABC):
 				field_list = []
 		return this_index
 
+	"""Compte et renvoit le nombre de documents dans une collection.
+	'query' est une requête pour filtrer les documents devant être comptés.
+	"""
+	def mongocount(self,coll_tocount,query={}):
+		reddit = self.mongo_connect()
+		coll = reddit[coll_tocount]
+		return coll.count_documents(query)
+
 
 """Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est

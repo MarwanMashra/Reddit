@@ -93,8 +93,19 @@ def locationsearch(location_list, p_iter):
 				location = ''
 
 
+def db_tester(username):
+	dbloader = mongo.MongoSave([])
+	next_code = 0
+	if dbloader.mongocheck('Testeurs'):
+		next_code = dbloader.mongocount('Testeurs')
+	dbloader.reinit([{'user_id': username, 'code': next_code, 'num_answers': 0}])
+	dbloader.storeindb('Testeurs',user_id='A')
+	print('Profil testeur créé.')
 
-app= Flask(__name__)
+
+
+app = Flask(__name__)
+app.secret_key='mysecret'
 
 @app.route('/')
 @app.route('/map')
@@ -113,34 +124,34 @@ def connexion():
 		pseudo_email=request.form['pseudo_email']
 		password = request.form['password']
 		
-		#chercher le compte en supposons que c'est le pseudo
+		#Chercher le compte en supposant que c'est le pseudo
 		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
 
-		#si comptre pas trouvé, chercher le compte en supposons que c'est le pseudo
+		#Si comptre pas trouvé, chercher le compte en supposant que c'est le pseudo
 		if not compte:
 			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
 
-		#si compte trouvé	
+		#Si compte trouvé	
 		if compte:
 			compte = compte[0]
-			#vérifier le mot de passe checkpw(password, hashed)
+			#Vérifier le mot de passe checkpw(password, hashed)
 			if bcrypt.hashpw(password.encode('utf-8'),compte['password']) == compte['password']:
 
-				#cookies
-				session['username']=compte['pseudo']
+				#Cookies
+				session['username'] = compte['pseudo']
 				session['admin?'] = ( compte['admin?'] == "YES" )
 				if (session['admin?']):
-					return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+					return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
 				else:
 					return redirect(url_for('map'))
 					
-		#pseudo,email ou mot de passe invalide
+		#Pseudo,email ou mot de passe invalide
 		error="Le pseudo/email ou le mot de passe n'est pas valide"
 		return render_template('connexion.html',error=error)
 			
 	elif 'username' in session:
 		if session['admin?']:
-			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+			return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
 		else:
 			return redirect(url_for('map'))
 
@@ -155,62 +166,56 @@ def connexion():
 def inscription():
 	
 	if request.method == 'POST':
-
 		pseudo = request.form['pseudo']
 		email = request.form['email']
 		password = request.form['password']
 		password_confirmation = request.form['password_confirmation']
 		is_admin = ('admin' in request.form)
 
-		exesting_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
-		exesting_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
+		existing_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
+		existing_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
 
-		if exesting_name:
-			error = "Le pseudo est déjà utilisé, veuillez choisir un autre"
-
-		elif exesting_mail:
-			error = "Cette adresse mail est déjà utilisée, veuillez vous-connectez"
-
+		if existing_name:
+			error = 'Ce pseudo est déjà utilisé, veuillez en choisir un autre.'
+		elif existing_mail:
+			error = 'Cette adresse mail est déjà utilisée, veuillez vous-connectez.'
 		elif password != password_confirmation:
-			error = "Les deux mots de passes sont différentes"
+			error = 'Les deux mots de passes sont différents.'
 
 		else:
+			#Cookies
+			session['username'] = pseudo
+			session['admin?'] = is_admin   
 
-			#cookies
-			session['username']=pseudo
-			session['admin?']= is_admin   
-
-			#cryptage du mot de passe
+			#Cryptage du mot de passe
 			hashpass= bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
 			
-			#stockage dans mongoDB
+			#Stockage dans mongoDB
 			dic = {}
-			dic['pseudo']=pseudo
-			dic['email']=email
-			dic['password']=hashpass
+			dic['pseudo'] = pseudo
+			dic['email'] = email
+			dic['password'] = hashpass
 			if session['admin?']:
-				dic['admin?']="YES"
+				dic['admin?'] = 'YES'
+				db_tester(session['username']) #Création d'un profil testeur
 			else:
-				dic['admin?']="NO"
-			listdb= []
+				dic['admin?'] = 'NO'
+			listdb = []
 			listdb.append(dic)
 			documents = mongo.MongoSave(listdb)
 			documents.storeindb('users_accounts')
 
-			
-
 			if (session['admin?']):
-				#appel de la fonction qui crée le compte admin
-				return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
-
+				#Appel de la fonction qui crée le compte admin
+				return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
 			else:
 				return redirect(url_for('map'))
 
-		return render_template("inscription.html",error=error)
+		return render_template('inscription.html',error=error)
 
 	elif 'username' in session:
 		if session['admin?']:
-			return "Ceci est la page des testeur"   #normalement ça sera redirect(url_for('test'))
+			return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
 		else:
 			return redirect(url_for('map'))
 
@@ -246,20 +251,22 @@ def scraping():
 	#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
 	reddit_tagger=treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
-	#Dico stockant tous les résultats de recherche (results) + informations générales (head)
-	dic_results = {}
-	dic_results['head'] = {}
-	dic_results['head']['total'] = 0
-	dic_results['head']['country'] = {}
-	dic_results['head']['country']['name'] = country
-
 	#Coordonnées pays
 	search_res = requests.get('http://api.geonames.org/searchJSON?q='+country+'&username=scrapelord',
 				 auth=('scrapelord','Blorp86'))
 	search_res = search_res.json()
-	dic_results['head']['country']['lng'] = search_res['geonames'][0]['lng']
-	dic_results['head']['country']['lat'] = search_res['geonames'][0]['lat'] 
-	dic_results['results'] = []
+	#Dico stockant tous les résultats de recherche (results) + informations générales (head)
+	dic_results = {
+					'head': {
+								'total': 0,
+								'country': {
+											'name': country,
+											'lng': search_res['geonames'][0]['lng'],
+											'lat': search_res['geonames'][0]['lat'] 
+										   }
+							},
+					'results': []
+				  }
 
 	#Liste de chargement pour la base de données
 	database_list = []
@@ -289,52 +296,53 @@ def scraping():
 					if len(reddit_tags) > title_split+1:
 						locationsearch(location_list,more_itertools.peekable(reddit_tags[title_split+1:]))
 					#Priorité tertiaire: commentaire(s) du redditor qui a posté la photo
+					"""
 					for comment in post.comments.list(): #Liste du parcours en largeur de l'arborescence de commentaires
-						location = ''
 						if isinstance(comment,praw.models.MoreComments): #On ignore les objets MoreComments
 							continue
 						if comment.is_submitter:
 							comment_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(comment.body),
 										   exclude_nottags=True)
 							locationsearch(location_list,more_itertools.peekable(comment_tags))
+					"""
 					print('Lieux trouvés:',end='')
 					pprint.pprint(location_list)
 					print('')
 
 					#GeoNames
 					if location_list:
-						dic_mongo = {}
-						dic_mongo['link'] = post.permalink
-						dic_mongo['img_url'] = post.url #Lien direct vers la photo
-						dic_mongo['search_version'] = rgnversion
-						dic_mongo['country'] = country
-						dic_mongo['title'] = res.group(1).strip()
-						dic_mongo['tag_list'] = reddit_tags
-						dic_mongo['location_list'] = location_list
+						dic_mongo = {
+										'link': post.permalink,
+										'img_url': post.url, #Lien direct vers la photo
+										'search_version': rgnversion,
+										'country': country,
+										'title': res.group(1).strip(),
+										'tag_list': reddit_tags,
+										'location_list': location_list
+									}
 
-
-						dic_tmp = {} #Initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-						dic_tmp['img'] = post.url
-						dic_tmp['search_version'] = rgnversion
-						#passer l'url vers le post
-						dic_tmp['url']="https://www.reddit.com"+post.permalink
-
-						#passer la date 
+						#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
 						date = time.gmtime(post.created_utc)
-						dic_tmp['date']={}
-						dic_tmp['date']['year']=date.tm_year
-						dic_tmp['date']['month']=date.tm_mon
-						dic_tmp['date']['day']=date.tm_mday
-						dic_tmp['date']['hour']=date.tm_hour
-						dic_tmp['date']['min']=date.tm_min
-						dic_tmp['date']['sec']=date.tm_sec
-
-						#passer l'author
-						dic_tmp['author']={}	
-						dic_tmp['author']['name']=post.author.name
-						dic_tmp['author']['icon']=post.author.icon_img
-						dic_tmp['author']['profile']="https://www.reddit.com/user/"+post.author.name
-
+						dic_tmp = {
+									'img': post.url,
+									'search_version': rgnversion,
+									'url': 'https://www.reddit.com'+post.permalink, #Passer l'url du post
+									#Stocker la date
+									'date': {
+												'year': date.tm_year,
+												'month': date.tm_mon,
+												'day': date.tm_mday,
+												'hour': date.tm_hour,
+												'min': date.tm_min,
+												'sec': date.tm_sec
+											},
+									#Stocker l'auteur
+									'author': {
+												'name': post.author.name,
+												'icon': post.author.icon_img,
+												'profile': 'https://www.reddit.com/user/'+post.author.name
+											  }
+								  }
 
 						for loc in location_list:
 							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
@@ -437,6 +445,5 @@ def send_results():
 	return jsonify(status='OK')
 
 if __name__ == '__main__' :
-	app.secret_key="mysecret"
 	app.run(debug=True,port=5000)
 
