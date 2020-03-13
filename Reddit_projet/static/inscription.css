@@ -1,0 +1,71 @@
+body{
+	background-image: url('_data/earth.jpg');
+	background-size:cover;
+	background-attachment: fixed;
+	font-family: new time romain;
+	color:white;
+	font-size: 16px;
+
+}
+
+
+.label{
+	font-weight: normal;
+	margin-top: 15px;
+}
+
+.form-control{
+	background:transparent;
+	border-radius: 0px;
+	border:0px;
+	border-bottom: 1px solid white;
+	height: 40px;
+	color: white;
+	
+}
+.subcontainer{
+	margin-top: 80px;
+	padding: 15px;
+	box-shadow: -1px 1px 30px 10px gray;
+	background:rgba(0,0,0,0.4);
+
+}
+input[type=checkbox]{
+	margin-left:80px; 
+	margin-top: 15px;
+	margin-right: 1px;
+}
+.checkbox > label{
+	font-size: 18px;
+	margin:15px;
+}
+h3{
+	font-size: 30px;
+}
+
+.btn-info{
+	margin-left: 63px;
+	margin-right: 60px;
+	margin-top: 30px;
+	width: 120px;
+	margin-bottom: 15px;
+}
+
+input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, select:focus{
+    outline:none;
+    background-color: transparent;
+    color: white;
+}
+#url_connexion > a {
+	color: #1E90FF;
+	font-size:23px; 
+	margin-right: 100px;
+
+}
+#url_connexion{
+	font-size:17px; 
+}
+#error_message{
+	color: red;
+	font-size: 15px;
+}
