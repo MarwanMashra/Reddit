@@ -380,6 +380,17 @@ def scraping():
 def test():
 	return render_template('test-expert.html')
 
+"""Renvoit le nombre total de documents que le testeur en session doit tester.
+"""
+@app.route('/get_count',methods=['GET'])
+def get_count():
+	dbcounter = mongo.MongoLoad({'user_id': session['username']},
+								{'code': 1, '_id': 0})
+	test_code = dbcounter.retrieve('Testeurs',limit=1)[0]['code']
+	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
+	return jsonify(doc_number)
+
+
 """Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
 de la base de données, en fonction du testeur qui a lancé la requête, et renvoie en format
 JSON des résultats à la page de tests.

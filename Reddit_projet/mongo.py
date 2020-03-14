@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import abc, dns, pymongo, sys
+import dns, pymongo, sys
 
 
-"""De https://docs.python.org/3/library/abc.html: 'Unlike Java abstract methods, these abstract
-methods may have an implementation. This implementation can be called via the super() mechanism
-from the class that overrides it.'
+"""Classe de base dont héritent les autres. Permet de se connecter et d'obtenir des informations
+sur la base de données, mais pas d'opérer dessus.
 """
-class Mongo(abc.ABC):
-	@abc.abstractmethod #Pas d'instantiation de cette classe
+class Mongo:
 	def mongo_connect(self):
 		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
 								    +'mongodb.net/test?retryWrites=true&w=majority')
@@ -78,9 +76,6 @@ class MongoSave(Mongo):
 	def reinit(self,dblist):
 		self.document = dblist
 
-	def mongo_connect(self):
-		return super().mongo_connect()
-
 	def storeindb(self,coll_tostore,**index):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
@@ -132,9 +127,6 @@ class MongoUpd(Mongo):
 
 	def reinit(self,dic):
 		self.filter = dic
-
-	def mongo_connect(self):
-		return super().mongo_connect()
 
 	"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
 	query so that the query selects the documents in the collection that match all the conditions.'
@@ -189,9 +181,6 @@ class MongoLoad(Mongo):
 	def reinit(self,dic_q,dic_p={'_id': 0}):
 		self.query = dic_q
 		self.projection = dic_p
-
-	def mongo_connect(self):
-		return super().mongo_connect()
 
 	def retrieve(self,coll_tosearch,limit=0):
 		reddit = self.mongo_connect()
