@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import mongo, pprint
+from math import floor, log2
 
 
 #Script de recharge du champs 'testers' des documents NOT_OK pour les tests
@@ -29,6 +30,7 @@ updater.reinit({
 					'id_field': {
 									'name': 'img_url',
 									'values': ['https://i.imgur.com/3LDmMr7.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
 											   'https://i.redd.it/2qhzpuf77se41.jpg']
@@ -40,12 +42,16 @@ updater.reinit({
 				})
 updater.updatedb('Resultats_RGN','$set')
 print('Succès.')
+test_code = 2**0 + 2**1 + 2**2 + 2**3 + 2**4 + 2**5 + 2**6 + 2**7
+bytesize = floor(log2(test_code)/8) + 1
+test_code = test_code.to_bytes(bytesize,byteorder='big')
 updater.reinit({
 					'update': 'testers',
-					'newvalue': 2**0 + 2**1 + 2**2,
+					'newvalue': test_code,
 					'id_field': {
 									'name': 'img_url',
 									'values': ['https://i.imgur.com/3LDmMr7.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
 											   'https://i.redd.it/2qhzpuf77se41.jpg']

@@ -26,7 +26,7 @@ class Mongo:
 	indexés à rechercher sont passés dans un tuple.
 	Retour de index_information(): dictionnaire de dictionnaires:
 	{
-		<nom index>: { 'key': [(<champs indexé>, <0 ou 1>),...],
+		<nom index>: { 'key': [(<champ indexé>, <0 ou 1>),...],
 						<autres informations>
 					 }
 		<nom index>: ...
@@ -63,7 +63,7 @@ class Mongo:
 """Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
 pas obligatoire.
-Syntaxe pour l'index en paramètre: <nom champs du document>=<'A' ou 'D'>,... Sera transformé
+Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera transformé
 en liste de tuples pour le passage à la méthode de pymongo.collections.
 De pymongo: 'An important note about collections (and databases) in MongoDB is that they
 are created lazily (...) Collections and databases are created when the first document is
@@ -110,15 +110,15 @@ class MongoSave(Mongo):
 
 """Mises à jour: syntaxe du dico de chargement:
 {
-	update: <champs à mettre à jour>
-	newvalue: <nouvelle valeur>
+	update: <champ à mettre à jour>
+	newvalue: <nouvelle valeur> OU [<nouvelle valeur>,...] #liste de même taille que la liste id_field['name']
 	id_field: {
 		name: <nom du champ> #par exemple img_url
 		values: [<valeur du champs>,...]
 	#Optionnel
 	other_field: {
-		name: <nom du champs unique> #par exemple search_version
-		value: <valeur du champs unique>
+		name: <nom du champ unique> #par exemple search_version
+		value: <valeur du champ unique>
 }
 """
 class MongoUpd(Mongo):
@@ -135,6 +135,18 @@ class MongoUpd(Mongo):
 	def updatedb(self,coll_toupd,operator):
 		reddit = self.mongo_connect()
 		coll = reddit[coll_toupd]
+		if type(self.filter['newvalue']) == list:
+			id_and_val = list(zip(self.filter['id_field']['values'],self.filter['newvalue']))
+			for ident,value in id_and_val:
+				if 'other_field' in self.filter:
+					coll.update_one({
+									  self.filter['id_field']['name']: ident,
+									  self.filter['other_field']['name']: self.filter['other_field']['value']
+									},
+									{operator: {self.filter['update']: value}})
+				else:
+					coll.update_one({self.filter['id_field']['name']: ident},
+									{operator: {self.filter['update']: value}})
 		if 'other_field' in self.filter:
 			coll.update_many({
 								self.filter['id_field']['name']: {'$in': self.filter['id_field']['values']},
@@ -153,25 +165,25 @@ La requête:
 	...
 	<champs>: { <opérateur>: <valeur> }
 	...
-	<opérateur logique>: [ <champs>: <valeur>
+	<opérateur logique>: [ <champ>: <valeur>
 						   ...
-						   <champs>: <valeur>
+						   <champ>: <valeur>
 						 ]
 }
 La projection par inclusion:
 {
-	<champs>: 1
+	<champ>: 1
 	...
-	<champs>: 1
+	<champ>: 1
 	(optionnel) '_id': 0 (seul exclusion qui marche avec l'inclusion)
 }
 OU par exclusion
 {
-	<champs>: 0
+	<champ>: 0
 	...
-	<champs>: 0
+	<champ>: 0
 }
-Si on veut retourner tous les champs passer un dictionnaire vide en deuxième paramètre.
+Si on veut retourner tous les champ passer un dictionnaire vide en deuxième paramètre.
 """
 class MongoLoad(Mongo):
 	def __init__(self,dic_q,dic_p={'_id': 0}):

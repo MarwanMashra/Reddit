@@ -3,6 +3,7 @@
 
 import copy, json, mongo, more_itertools, os, pprint, praw, re, requests, sys, treetaggerwrapper, time, bcrypt, urllib
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from math import floor, log2
 
 #This code attempts to conform to PEP8
 
@@ -406,8 +407,8 @@ def get_results():
 	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
-					{'search_version': 1, 'img_url': 1, 'tag_list': 1, 'location_list': 1,
-					 'location': 1, 'name': 1, '_id': 0})
+					{'search_version': 1, 'img_url': 1, 'tag_list': 1,
+					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
 	return jsonify({'results': doc_list})
 
@@ -416,13 +417,17 @@ def get_results():
 décrémentation de la champ 'testers' des documents qui viennent d'être testés
 de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
 testeur dans la collection 'Testeurs'.
+Le champ 'testers' est de type BSON BinData: une chaîne en base 64 représentant
+un champ de bits de taille quelconque, ce qui permet de stocker des valeurs
+supérieures à 2^63-1.
+Le module pymongo convertit automatiquement un objet de type bytes en BinData.
 """
 @app.route('/send_results',methods=['POST'])
 def send_results():
 	#La méthode POST renvoie des bytes: convertir en string puis en JSON
 	response = json.loads(request.data.decode('utf-8'))
 	#pprint.pprint(response)
-	tester = response['tester'].strip('"')
+	tester = session['username']
 	documents = mongo.MongoSave(response['results'])
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 	update = mongo.MongoUpd({
@@ -431,6 +436,7 @@ def send_results():
 								'id_field': {'name': 'user_id','values': [tester]}
 							})
 	update.updatedb('Testeurs','$inc')
+
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
 	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
@@ -438,13 +444,25 @@ def send_results():
 	url_list = []
 	for dic in response['results']:
 		url_list.append(dic['img_url'])
+
+	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
+					{'testers': 1, '_id': 0})
+	all_testers = dbfinder.retrieve('Resultats_RGN')
+	sum_list = []
+	for doc in all_testers:
+		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
+		tester_sum -= 2**test_code
+		bytesize = floor(log2(tester_sum)/8) + 1
+		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
+		sum_list.append(intgr)
+
 	update.reinit({
 					'update': 'testers',
-					'newvalue': (-1)*(2**test_code),
+					'newvalue': sum_list,
 					'id_field': {'name': 'img_url', 'values': url_list},
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
-	update.updatedb('Resultats_RGN','$inc')
+	update.updatedb('Resultats_RGN','$set')
 	return jsonify(status='OK')
 
 if __name__ == '__main__' :
