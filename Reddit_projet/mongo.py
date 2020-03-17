@@ -40,8 +40,8 @@ class Mongo:
 		this_index = ''
 		for key in indexes:
 			for field in index:
-				for pair in indexes[key]['key']:
-					if field == pair[0]:
+				for i_field, order in indexes[key]['key']:
+					if field == i_field:
 						field_list.append(field)
 						break
 			if len(field_list) == len(index):
@@ -137,7 +137,7 @@ class MongoUpd(Mongo):
 		coll = reddit[coll_toupd]
 		if type(self.filter['newvalue']) == list:
 			id_and_val = list(zip(self.filter['id_field']['values'],self.filter['newvalue']))
-			for ident,value in id_and_val:
+			for ident, value in id_and_val:
 				if 'other_field' in self.filter:
 					coll.update_one({
 									  self.filter['id_field']['name']: ident,
@@ -147,7 +147,7 @@ class MongoUpd(Mongo):
 				else:
 					coll.update_one({self.filter['id_field']['name']: ident},
 									{operator: {self.filter['update']: value}})
-		if 'other_field' in self.filter:
+		elif 'other_field' in self.filter:
 			coll.update_many({
 								self.filter['id_field']['name']: {'$in': self.filter['id_field']['values']},
 								self.filter['other_field']['name']: self.filter['other_field']['value']

@@ -86,7 +86,7 @@ La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
 """
 def locationsearch(location_list, p_iter):
 	location = ''
-	for word,pos,lemma in p_iter:
+	for word, pos, lemma in p_iter:
 		if pos in ['NP0','NP'] and word[0].isalpha():
 			location += word+' '
 			if p_iter.peek(('end','end','end'))[1] not in ['NP0','NP']:
@@ -389,7 +389,7 @@ def get_count():
 								{'code': 1, '_id': 0})
 	test_code = dbcounter.retrieve('Testeurs',limit=1)[0]['code']
 	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
-	return jsonify(doc_number)
+	return jsonify(nbtest=doc_number,pseudo=session['username'])
 
 
 """Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
@@ -454,7 +454,7 @@ def send_results():
 		tester_sum -= 2**test_code
 		bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
-		sum_list.append(intgr)
+		sum_list.append(tester_sum)
 
 	update.reinit({
 					'update': 'testers',
