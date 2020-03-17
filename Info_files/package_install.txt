@@ -1,0 +1,3 @@
+Dans le dossier top level contenant Geoscape, TreeTagger et setup.py, assurez-vous d'avoir le droit d'écrire
+(si vous êtes dans un dossier en dehors de Home (~), faites un sudo chmod 777 'dossier') puis exécutez la commande:
+	pip install -e .
