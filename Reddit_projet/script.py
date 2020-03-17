@@ -147,7 +147,7 @@ def connexion():
 				session['username'] = compte['pseudo']
 				session['admin?'] = ( compte['admin?'] == "YES" )
 				if (session['admin?']):
-					return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
+					return redirect(url_for('testeur'))  
 				else:
 					return redirect(url_for('map'))
 					
@@ -157,7 +157,7 @@ def connexion():
 			
 	elif 'username' in session:
 		if session['admin?']:
-			return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
+			return redirect(url_for('testeur'))  
 		else:
 			return redirect(url_for('map'))
 
@@ -211,15 +211,15 @@ def inscription():
 
 			if (session['admin?']):
 				#Appel de la fonction qui crée le compte admin
-				return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
+				return redirect(url_for('testeur')) 
 			else:
-				return redirect(url_for('map'))
+				return redirect(url_for('map'))  
 
 		return render_template('inscription.html',error=error)
 
 	elif 'username' in session:
 		if session['admin?']:
-			return 'Ceci est la page des testeurs.'   #Normalement ça sera redirect(url_for('test'))
+			return redirect(url_for('testeur'))  
 		else:
 			return redirect(url_for('map'))
 
@@ -331,6 +331,7 @@ def scraping():
 					date = time.gmtime(post.created_utc)
 					dic_tmp = {
 								'img': post.url,
+								'text':post.title,
 								'search_version': rgnversion,
 								'url': 'https://www.reddit.com'+post.permalink, #Passer l'url du post
 								#Stocker la date
@@ -381,6 +382,15 @@ def scraping():
 def test():
 	return render_template('test-expert.html')
 
+
+@app.route('/testeur')
+@app.route('/testeur.html')
+def testeur():
+	if ('admin?' in session) and (session['admin?']) :
+		return render_template('testeur.html')
+	return redirect(url_for('connexion'))
+
+
 """Renvoit le nombre total de documents que le testeur en session doit tester.
 """
 @app.route('/get_count',methods=['GET'])
@@ -400,7 +410,7 @@ JSON des résultats à la page de tests.
 def get_results():
 	result_value = request.args.get('value')
 	version = request.args.get('version')
-	limit = request.args.get('limit')
+	limit = int(request.args.get('limit'))
 	tester = session['username']
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
@@ -465,6 +475,8 @@ def send_results():
 	update.updatedb('Resultats_RGN','$set')
 	return jsonify(status='OK')
 
+
+
+
 if __name__ == '__main__' :
 	app.run(debug=True,port=5000)
-
