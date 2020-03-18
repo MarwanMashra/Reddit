@@ -2,22 +2,19 @@
 #-*- coding: utf-8 -*-
 
 import dns, pymongo, sys
+from .db_init import client
 
 
-"""Classe de base dont héritent les autres. Permet de se connecter et d'obtenir des informations
-sur la base de données, mais pas d'opérer dessus.
+
+"""Classe de base dont héritent les autres. Permet d'obtenir des informations sur la
+base de données, mais pas d'opérer dessus. La connexion elle-même se fait dans le
+fichier db_init.py.
 """
 class Mongo:
-	@staticmethod
-	def mongo_connect():
-		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
-								    +'mongodb.net/test?retryWrites=true&w=majority')
-		return client.RedditScrape
-
 	"""Vérifie l'existence d'une collection.
 	"""
 	@classmethod
-	def mongocheck(cls,client,coll_exists):
+	def mongocheck(cls,coll_exists):
 		if coll_exists in client.list_collection_names():
 			return True
 		else:
@@ -34,7 +31,7 @@ class Mongo:
 	}
 	"""
 	@classmethod
-	def indexcheck(cls,client,coll_tocheck,*index):
+	def indexcheck(cls,coll_tocheck,*index):
 		coll = client[coll_tocheck]
 		indexes = coll.index_information()
 		field_list = []
@@ -56,7 +53,7 @@ class Mongo:
 	'query' est une requête pour filtrer les documents devant être comptés.
 	"""
 	@classmethod
-	def mongocount(cls,client,coll_tocount,query={}):
+	def mongocount(cls,coll_tocount,query={}):
 		coll = client[coll_tocount]
 		return coll.count_documents(query)
 
@@ -77,7 +74,7 @@ class MongoSave(Mongo):
 	def reinit(self,dblist):
 		self.document = dblist
 
-	def storeindb(self,client,coll_tostore,**index):
+	def storeindb(self,coll_tostore,**index):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
 		coll = client[coll_tostore]
@@ -132,7 +129,7 @@ class MongoUpd(Mongo):
 	query so that the query selects the documents in the collection that match all the conditions.'
 	Paramètre operator: '$set', '$unset', '$inc' fonctionnent
 	"""
-	def updatedb(self,client,coll_toupd,operator):
+	def updatedb(self,coll_toupd,operator):
 		coll = client[coll_toupd]
 		if type(self.filter['newvalue']) == list:
 			id_and_val = list(zip(self.filter['id_field']['values'],self.filter['newvalue']))
@@ -193,7 +190,7 @@ class MongoLoad(Mongo):
 		self.query = dic_q
 		self.projection = dic_p
 
-	def retrieve(self,client,coll_tosearch,limit=0):
+	def retrieve(self,coll_tosearch,limit=0):
 		coll = client[coll_tosearch]
 		if not self.projection and limit == 0:
 			return list(coll.find(self.query))

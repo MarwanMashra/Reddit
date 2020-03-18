@@ -4,7 +4,6 @@
 import Geoscape.mongo as mongo
 from flask import Blueprint, jsonify, request, session
 from math import floor, log2
-from .db_init import client
 
 mdb = Blueprint('mdb',__name__)
 
@@ -16,8 +15,8 @@ mdb = Blueprint('mdb',__name__)
 def get_count():
 	dbcounter = mongo.MongoLoad({'user_id': session['username']},
 								{'code': 1, '_id': 0})
-	test_code = dbcounter.retrieve(client,'Testeurs',limit=1)[0]['code']
-	doc_number = dbcounter.mongocount(client,'Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
+	test_code = dbcounter.retrieve('Testeurs',limit=1)[0]['code']
+	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
 	
 	return jsonify(nbtest=doc_number,pseudo=session['username'])
 
@@ -36,13 +35,13 @@ def get_results():
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve(client,'Testeurs',limit=1)[0]['code']
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
 					{'search_version': 1, 'img_url': 1, 'tag_list': 1,
 					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
-	doc_list = dbfinder.retrieve(client,'Resultats_RGN',limit=limit)
+	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
 
 	return jsonify({'results': doc_list})
 
@@ -62,17 +61,17 @@ def send_results():
 	response = json.loads(request.data.decode('utf-8'))
 	tester = session['username']
 	documents = mongo.MongoSave(response['results'])
-	documents.storeindb(client,'Resultats_Test_Expert_1',img_url='A',search_version='D')
+	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 	update = mongo.MongoUpd({
 								'update': 'num_answers',
 								'newvalue': 1,
 								'id_field': {'name': 'user_id','values': [tester]}
 							})
-	update.updatedb(client,'Testeurs','$inc')
+	update.updatedb('Testeurs','$inc')
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve(client,'Testeurs',limit=1)[0]['code']
+	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
 	version = response['results'][0]['search_version']
 	url_list = []
 	for dic in response['results']:
@@ -80,7 +79,7 @@ def send_results():
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
 					{'testers': 1, '_id': 0})
-	all_testers = dbfinder.retrieve(client,'Resultats_RGN')
+	all_testers = dbfinder.retrieve('Resultats_RGN')
 	sum_list = []
 	for doc in all_testers:
 		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
@@ -95,6 +94,6 @@ def send_results():
 					'id_field': {'name': 'img_url', 'values': url_list},
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
-	update.updatedb(client,'Resultats_RGN','$set')
+	update.updatedb('Resultats_RGN','$set')
 
 	return jsonify(status='OK')

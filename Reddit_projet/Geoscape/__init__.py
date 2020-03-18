@@ -7,6 +7,8 @@ from flask import Flask
 from Geoscape.scraper import rgn
 from Geoscape.database import mdb
 
+
+
 app = Flask(__name__)
 
 if __name__ == '__main__' :

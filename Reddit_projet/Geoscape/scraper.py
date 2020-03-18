@@ -4,7 +4,6 @@
 import copy, json, more_itertools, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
 import Geoscape.mongo as mongo
 from flask import Blueprint, jsonify, request
-from .db_init import client
 
 rgn = Blueprint('rgn',__name__)
 
@@ -236,7 +235,7 @@ def scraping():
 
 	#Chargement dans la base de données
 	documents = mongo.MongoSave(database_list)
-	documents.storeindb(client,'Resultats_RGN',img_url='A',search_version='D')
+	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
 
 	return jsonify(dic_results)
 
