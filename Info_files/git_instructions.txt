@@ -7,7 +7,7 @@ git remote -v
 git remote rm origin
 	Efface la liste des dépôts distants (pas les dépôts eux-mêmes)
 
-git remode add origin <nom_dépôt>		e.g. https://github.com/MarwanMashra/Reddit.git
+git remote add origin <nom_dépôt>		e.g. https://github.com/MarwanMashra/Reddit.git
 	Ajoute le dépôt à la liste des dépôts distants. Le dépôt est le même pour le master ou les branches.
 
 git pull
@@ -23,6 +23,9 @@ git push origin master
 
 git push origin <nome_de_branche>:master
 	La branche personnelle push sur le master à titre exceptionnel.
+
+git reset --hard HEAD
+	Supprime les modifications dans le(s) fichier(s) après le dernier commit.
 
 git reset --soft HEAD~1
 	Supprime le dernier commit.
