@@ -2,9 +2,10 @@
 #-*- coding: utf-8 -*-
 
 from Geoscape import app
-import Geoscape.mongo as mongo
 import json, sys, bcrypt, urllib
+import Geoscape.mongo as mongo
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from .db_init import client
 
 
 
@@ -17,8 +18,8 @@ def db_tester(username):
 	dbloader = mongo.MongoSave([])
 	next_code = 0
 
-	if dbloader.mongocheck('Testeurs'):
-		next_code = dbloader.mongocount('Testeurs')
+	if dbloader.mongocheck(client,'Testeurs'):
+		next_code = dbloader.mongocount(client,'Testeurs')
 	dbloader.reinit([{'user_id': username, 'code': next_code, 'num_answers': 0}])
 	dbloader.storeindb('Testeurs',user_id='A')
 	print('Profil testeur créé.')
@@ -45,11 +46,11 @@ def connexion():
 		password = request.form['password']
 		
 		#Chercher le compte en supposant que c'est le pseudo
-		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
+		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve(client,'users_accounts',limit=1)
 
 		#Si compte pas trouvé, chercher le compte en supposant que c'est le mail
 		if not compte:
-			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
+			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve(client,'users_accounts',limit=1)
 
 		#Si compte trouvé	
 		if compte:
@@ -90,8 +91,8 @@ def inscription():
 		password_confirmation = request.form['password_confirmation']
 		is_admin = ('admin' in request.form)
 
-		existing_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
-		existing_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
+		existing_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve(client,'users_accounts',limit=1)
+		existing_mail = mongo.MongoLoad({'email': email}).retrieve(client,'users_accounts',limit=1)
 
 		if existing_name:
 			error = 'Ce pseudo est déjà utilisé, veuillez en choisir un autre.'
@@ -120,7 +121,7 @@ def inscription():
 			else:
 				dic['admin?'] = 'NO'
 			documents = mongo.MongoSave([dic])
-			documents.storeindb('users_accounts',pseudo='A',email='A')
+			documents.storeindb(client,'users_accounts',pseudo='A',email='A')
 
 			if (session['admin?']):
 				#Appel de la fonction qui crée le compte admin

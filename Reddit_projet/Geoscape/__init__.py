@@ -16,5 +16,3 @@ app.register_blueprint(rgn)
 app.register_blueprint(mdb)
 
 import Geoscape.script
-import Geoscape.scraper
-import Geoscape.database

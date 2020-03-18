@@ -8,16 +8,16 @@ import dns, pymongo, sys
 sur la base de données, mais pas d'opérer dessus.
 """
 class Mongo:
-	def mongo_connect(self):
+	@staticmethod
+	def mongo_connect():
 		client = pymongo.MongoClient('mongodb+srv://scrapelord:dPSw8KCjKgF2fVp@redditscrape-bxkhv.'
 								    +'mongodb.net/test?retryWrites=true&w=majority')
 		return client.RedditScrape
 
 	"""Vérifie l'existence d'une collection.
 	"""
-	def mongocheck(self,coll_exists):
-		reddit = self.mongo_connect()
-		if coll_exists in reddit.list_collection_names():
+	def mongocheck(self,client,coll_exists):
+		if coll_exists in client.list_collection_names():
 			return True
 		else:
 			return False
@@ -32,9 +32,8 @@ class Mongo:
 		<nom index>: ...
 	}
 	"""
-	def indexcheck(self,coll_tocheck,*index):
-		reddit = self.mongo_connect()
-		coll = reddit[coll_tocheck]
+	def indexcheck(self,client,coll_tocheck,*index):
+		coll = client[coll_tocheck]
 		indexes = coll.index_information()
 		field_list = []
 		this_index = ''
@@ -54,9 +53,8 @@ class Mongo:
 	"""Compte et renvoit le nombre de documents dans une collection.
 	'query' est une requête pour filtrer les documents devant être comptés.
 	"""
-	def mongocount(self,coll_tocount,query={}):
-		reddit = self.mongo_connect()
-		coll = reddit[coll_tocount]
+	def mongocount(self,client,coll_tocount,query={}):
+		coll = client[coll_tocount]
 		return coll.count_documents(query)
 
 
@@ -76,11 +74,10 @@ class MongoSave(Mongo):
 	def reinit(self,dblist):
 		self.document = dblist
 
-	def storeindb(self,coll_tostore,**index):
+	def storeindb(self,client,coll_tostore,**index):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
-		reddit = self.mongo_connect()
-		coll = reddit[coll_tostore]
+		coll = client[coll_tostore]
 		index_list = []
 		for key,value in index.items():
 			if value == 'A':
@@ -132,9 +129,8 @@ class MongoUpd(Mongo):
 	query so that the query selects the documents in the collection that match all the conditions.'
 	Paramètre operator: '$set', '$unset', '$inc' fonctionnent
 	"""
-	def updatedb(self,coll_toupd,operator):
-		reddit = self.mongo_connect()
-		coll = reddit[coll_toupd]
+	def updatedb(self,client,coll_toupd,operator):
+		coll = client[coll_toupd]
 		if type(self.filter['newvalue']) == list:
 			id_and_val = list(zip(self.filter['id_field']['values'],self.filter['newvalue']))
 			for ident, value in id_and_val:
@@ -194,9 +190,8 @@ class MongoLoad(Mongo):
 		self.query = dic_q
 		self.projection = dic_p
 
-	def retrieve(self,coll_tosearch,limit=0):
-		reddit = self.mongo_connect()
-		coll = reddit[coll_tosearch]
+	def retrieve(self,client,coll_tosearch,limit=0):
+		coll = client[coll_tosearch]
 		if not self.projection and limit == 0:
 			return list(coll.find(self.query))
 		elif not self.projection:
