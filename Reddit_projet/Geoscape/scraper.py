@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import Geoscape.mongo as mongo
-import copy, json, more_itertools, os, pprint, praw, re, requests, time, treetaggerwrapper
+import copy, json, more_itertools, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
 from flask import Blueprint, jsonify, request
 
 rgn = Blueprint('rgn',__name__)
@@ -68,7 +68,7 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 					dicload(prio_list[0],dic_tmp)
 					dicload(prio_list[0],dic_mongo,location)
 					print_res = prio_list[0]['name']
-				
+
 				else:
 					return False
 

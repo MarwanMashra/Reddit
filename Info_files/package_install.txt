@@ -1,3 +1,17 @@
-Dans le dossier top level contenant Geoscape, TreeTagger et setup.py, assurez-vous d'avoir le droit d'écrire
-(si vous êtes dans un dossier en dehors de Home (~), faites un sudo chmod 777 'dossier') puis exécutez la commande:
+A l'intérieur du dossier Reddit_projet, vous trouverez le fichier setup.py et le dossier Geoscape.
+
+Installation dans votre dossier serveur local:
+/(serveur local)
+|
+|----setup.py
+|----/Geoscape
+|----/TreeTagger
+
+Dans ce dossier, assurez-vous d'avoir le droit d'écrire (si vous êtes dans un dossier en dehors de Home (~),
+faites un sudo chmod 777 'dossier' à partir du parent) puis exécutez la commande:
 	pip install -e .
+Cela va créer le package Geoscape.
+Ensuite, toujours au niveau de ce dossier, faites:
+	export FLASK_APP=__init__.py
+	flask run
+pour lancer le programme.

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import mongo, pprint
+import Reddit_projet.Geoscape.mongo as mongo 
+import pprint
 from math import floor, log2
 
 

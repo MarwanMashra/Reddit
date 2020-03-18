@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import Geoscape.mongo as mongo
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from math import floor, log2
 
 mdb = Blueprint('mdb',__name__)

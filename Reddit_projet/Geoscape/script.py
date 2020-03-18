@@ -3,7 +3,7 @@
 
 from Geoscape import app
 import Geoscape.mongo as mongo
-import json, pprint, sys, bcrypt, urllib
+import json, sys, bcrypt, urllib
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 
 
@@ -16,6 +16,7 @@ de 'Resultats_RGN' qu'il/elle doit tester.
 def db_tester(username):
 	dbloader = mongo.MongoSave([])
 	next_code = 0
+
 	if dbloader.mongocheck('Testeurs'):
 		next_code = dbloader.mongocount('Testeurs')
 	dbloader.reinit([{'user_id': username, 'code': next_code, 'num_answers': 0}])
@@ -79,7 +80,6 @@ def connexion():
 
 
 
-
 @app.route('/inscription.html',methods=['GET','POST'])
 @app.route('/inscription',methods=['GET','POST'])
 def inscription():	
@@ -140,6 +140,7 @@ def inscription():
 		return render_template('inscription.html')
 
 
+
 @app.route('/deconnexion')
 def deconnexion():
 	session.clear()
@@ -161,7 +162,3 @@ def testeur():
 		return render_template('testeur.html')
 	return redirect(url_for('connexion'))
 
-
-
-if __name__ == '__main__' :
-	app.run(debug=True,port=5000)
