@@ -16,7 +16,8 @@ class Mongo:
 
 	"""Vérifie l'existence d'une collection.
 	"""
-	def mongocheck(self,client,coll_exists):
+	@classmethod
+	def mongocheck(cls,client,coll_exists):
 		if coll_exists in client.list_collection_names():
 			return True
 		else:
@@ -32,7 +33,8 @@ class Mongo:
 		<nom index>: ...
 	}
 	"""
-	def indexcheck(self,client,coll_tocheck,*index):
+	@classmethod
+	def indexcheck(cls,client,coll_tocheck,*index):
 		coll = client[coll_tocheck]
 		indexes = coll.index_information()
 		field_list = []
@@ -53,7 +55,8 @@ class Mongo:
 	"""Compte et renvoit le nombre de documents dans une collection.
 	'query' est une requête pour filtrer les documents devant être comptés.
 	"""
-	def mongocount(self,client,coll_tocount,query={}):
+	@classmethod
+	def mongocount(cls,client,coll_tocount,query={}):
 		coll = client[coll_tocount]
 		return coll.count_documents(query)
 

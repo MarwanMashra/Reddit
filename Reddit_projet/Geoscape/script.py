@@ -15,13 +15,12 @@ de données. Chaque testeur reçoit un code unique qui sert à identifier les do
 de 'Resultats_RGN' qu'il/elle doit tester.
 """
 def db_tester(username):
-	dbloader = mongo.MongoSave([])
 	next_code = 0
+	if mongo.Mongo.mongocheck(client,'Testeurs'):
+		next_code = mongo.Mongo.mongocount(client,'Testeurs')
 
-	if dbloader.mongocheck(client,'Testeurs'):
-		next_code = dbloader.mongocount(client,'Testeurs')
-	dbloader.reinit([{'user_id': username, 'code': next_code, 'num_answers': 0}])
-	dbloader.storeindb('Testeurs',user_id='A')
+	dbloader = mongo.MongoSave([{'user_id': username, 'code': next_code, 'num_answers': 0}])
+	dbloader.storeindb(client,'Testeurs',user_id='A')
 	print('Profil testeur créé.')
 
 
