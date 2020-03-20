@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, json, more_itertools, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
+import copy, json, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
 import Geoscape.mongo as mongo
 from flask import Blueprint, jsonify, request
+from itertools import groupby
 
 rgn = Blueprint('rgn',__name__)
 
@@ -88,25 +89,6 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 
 
 
-"""Recherche de lieux potentiels par création de chaîne à partir des noms propres
-voisins (NP0 sous Linux, NP sous Windows). Ces lieux sont stockés dans une liste.
-La méthode peek() permet de regarder l'élément suivant de la liste. Elle prend un
-tuple par défaut qui sera consulté en fin d'itération pour ne pas causer une erreur
-de sortie de liste.
-La méthode rstrip() élimine les blancs potentiels en fin de chaîne.
-"""
-def locationsearch(location_list, p_iter):
-	location = ''
-	for word, pos, lemma in p_iter:
-		if pos in ['NP0','NP'] and word[0].isalpha():
-			location += word+' '
-
-			if p_iter.peek(('end','end','end'))[1] not in ['NP0','NP']:
-				location_list.append(location.rstrip())
-				location = ''
-
-
-
 """Configuration et lancement du reddit scrape, puis tagging des titres des soumissions reddit
 résultats par TreeTagger et analyse des tags pour obtenir une liste de lieux potentiels. Ces
 lieux sont recherchés sur geonames. Les résultats de cette dernière recherche sont chargés dans
@@ -166,18 +148,15 @@ def scraping():
 				#Liste de triplets: (word=..., pos=..., lemma=...)
 				pprint.pprint(reddit_tags)
 
-				#Recherche des lieux potentiels
-				location_list = []
-				if country.lower() in [t[2].lower() for t in reddit_tags]:  #Si le mot 'NomDuPays' est présent
-					title_split = [t[2].lower() for t in reddit_tags].index(country.lower())
-					locationsearch(location_list,more_itertools.peekable(reddit_tags[:title_split]))
-					if len(reddit_tags) > title_split+1:
-						locationsearch(location_list,more_itertools.peekable(reddit_tags[title_split+1:]))
-				else:
-					locationsearch(location_list,more_itertools.peekable(reddit_tags))
+				#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
+				location_list = [[t[0] for t in list(g)] if k else len(list(g)) for k, g in groupby(
+									reddit_tags, key = lambda x:
+								 		x[1] in ['NP','NP0'] and x[0] not in [country.upper(),country.lower()]
+								)]
+				location_list = [' '.join(seq) if type(seq) == list else seq for seq in location_list]
+
 				print('Lieux trouvés:',end='')
-				pprint.pprint(location_list)
-				print('')
+				print(location_list,'\n')
 
 				#Geonames
 				if location_list:
@@ -213,17 +192,17 @@ def scraping():
 										  }
 							  }
 
-					for loc in location_list:
+					for loc in (item for item in location_list if not type(item) == int):
 						if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,exact=True):
 							break
 					#Pas de match exact après avoir parcouru toute la liste: on prend le premier résultat
 					if 'name' not in dic_tmp:
-						for loc in location_list:
+						for loc in (item for item in location_list if not type(item) == int):
 							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo):
 								break
 					#Pas de résultat: on passe à une fuzzy search
 					if 'name' not in dic_tmp:
-						for loc in location_list:
+						for loc in (item for item in location_list if not type(item) == int):
 							if geonames_query(loc,country_code,dic_results,dic_tmp,dic_mongo,fuzzy=True):
 								break
 					if 'location' in dic_mongo:

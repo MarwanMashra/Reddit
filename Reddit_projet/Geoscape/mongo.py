@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import dns, pymongo, sys
-from .db_init import client
+from Geoscape.db_init import client
 
 
 
@@ -154,7 +154,8 @@ class MongoUpd(Mongo):
 							 {operator: {self.filter['update']: self.filter['newvalue']}})
 
 
-"""Recherche et extraction d'un document: format paramètres:
+"""Recherche et extraction d'un document sous forme de liste de document(s).
+Format paramètres:
 La requête:
 {
 	<champs>: <valeur>,
