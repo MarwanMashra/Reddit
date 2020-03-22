@@ -83,7 +83,7 @@ def send_results():
 	sum_list = []
 	for doc in all_testers:
 		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
-		tester_sum &= ( ~ (1<<test_code))
+		tester_sum &= (~ (1<<test_code))
 		bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		sum_list.append(tester_sum)
