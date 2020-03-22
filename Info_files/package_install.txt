@@ -12,6 +12,6 @@ faites un sudo chmod 777 'dossier' à partir du parent) puis exécutez la comman
 	pip install -e .
 Cela va créer le package Geoscape.
 Ensuite, toujours au niveau de ce dossier, faites:
-	export FLASK_APP=__init__.py
+	export FLASK_APP=Geoscape/__init__.py
 	flask run
 pour lancer le programme.
