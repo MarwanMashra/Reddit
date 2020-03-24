@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<title>testeur</title>
+	<meta charset="utf-8" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'testeur.css')}}">
+	<!--script src="{{url_for('static', filename = 'testeur.js')}}"></script-->
+	<script src="http://localhost:5000/static/testeur.js"></script>
+
+</head>
+<body>
+
+	<h2>salut</h2>
+	<div>
+		<div id="title"></div>
+		<div id="ici"></div>
+	</div>
+	<a href="{{ url_for('map') }}"><button id="goToMap">Visiter la map</button></a>	
+
+
+
+
+
+
+</body>
+</html>
