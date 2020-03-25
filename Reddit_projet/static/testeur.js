@@ -1,7 +1,7 @@
 $(document).ready(function(){
 	//on utilise des variables globales pour ne pas devoir les passer aux fonctions à chaque fois
 
-	var SEARCH_VESRION= "1.00";
+	var SEARCH_VERSION= "1.00";
 	var NB_TEST;              //stocke le nombre des test à effectuer 
 	var data;                 //stocke les tests 
 	var index=0;              //pour parcouir la liste des tests 
@@ -51,7 +51,7 @@ $(document).ready(function(){
 				datatype:"json",
 				data:{                    
 					value:"NOT_OK",
-					version: SEARCH_VESRION,
+					version: SEARCH_VERSION,
 					limit: NB_TEST
 				},
 				success: startTest   //lancer la préparation avant le test
@@ -64,12 +64,12 @@ $(document).ready(function(){
 		//enregister les données dans une variable glabale data
 		data=d; 
 		//préparer la variable result 
-		result['search_version']= SEARCH_VESRION;
+		result['search_version']= SEARCH_VERSION;
 		result['img_url']=[];
 		result['results']=[];
 		$.each(data['results'], function(i,element){
 			result['img_url'].push(element['img_url']);
-			result['results'].push({'Lieux_choisis':[]});
+			result['results'].push({'lieux_choisis':[]});
 		});
 		
 		//cacher le bouton visiter la map
@@ -202,7 +202,7 @@ $(document).ready(function(){
 		});
 
 		$.each(data['results'][index]['tag_list'], function(i,mot){            //parcourir la liste tag_list
-            result['results'][index]['Lieux_choisis'].push( $.inArray(mot[0],values) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
+            result['results'][index]['lieux_choisis'].push( $.inArray(mot[0],values) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
 		});
 		
         result['results'][index]['suffisant']= $("input[id='keywords']").is(':checked');

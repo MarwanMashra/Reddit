@@ -430,8 +430,18 @@ def send_results():
 	#La méthode POST renvoie des bytes: convertir en string puis en JSON
 	response = json.loads(request.data.decode('utf-8'))
 	#pprint.pprint(response)
-	tester = response['tester'].strip('"')
-	documents = mongo.MongoSave(response['results'])
+	tester = session['username']
+	test_results = response['results']
+	doc_results = list(zip(response['img_url'],test_results))
+	for url, test_item in doc_results:
+		new_document = {
+							'tester': tester,
+							'search_version': response['search_version'],
+							'img_url': url,
+							'locations_selected': test_item['lieux_choisis'],
+							'sufficient': test_item['suffisant']
+					}
+	documents = mongo.MongoSave(new_document)
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 	update = mongo.MongoUpd({
 								'update': 'num_answers',
