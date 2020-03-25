@@ -213,8 +213,8 @@ $(document).ready(function(){
 			$.ajax({
 				type:"POST",
 				url: "/send_results",
-				datatype: "json",
-				data: result
+				contentType: "application/json;charset=UTF-8",
+				data: JSON.stringify(result)
 			}).fail(printError);
 
 	}

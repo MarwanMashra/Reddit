@@ -31,7 +31,8 @@ updater.reinit({
 									'values': ['https://i.imgur.com/3LDmMr7.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
-											   'https://i.redd.it/2qhzpuf77se41.jpg']
+											   'https://i.redd.it/2qhzpuf77se41.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg']
 								},
 					'other_field': {
 									'name': 'search_version',
@@ -42,13 +43,14 @@ updater.updatedb('Resultats_RGN','$set')
 print('Succès.')
 updater.reinit({
 					'update': 'testers',
-					'newvalue': 2**0 + 2**1 + 2**2,
+					'newvalue': 2**0 + 2**1 + 2**2 + 2**3 + 2**4 + 2**5,
 					'id_field': {
 									'name': 'img_url',
 									'values': ['https://i.imgur.com/3LDmMr7.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
-											   'https://i.redd.it/2qhzpuf77se41.jpg']
+											   'https://i.redd.it/2qhzpuf77se41.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg']
 								},
 					'other_field': {
 									'name': 'search_version',
