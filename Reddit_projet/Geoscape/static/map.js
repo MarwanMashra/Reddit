@@ -1,5 +1,5 @@
 $(document).ready(function(){
-
+	
 	//création de la carte
 	var mymap = L.map('mapid');                 
 	L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
@@ -37,10 +37,12 @@ $(document).ready(function(){
 		$("body").append(animation);
 	}
 
-	function printError(error){
-		$("#animation").remove();
-		alert("ERROR !!!");
-		console.error(error);
+
+	function printError(error){    //afficher la page d'erreur 
+		
+		console.error("status: "+error['status']+"\nstatusText: "+error['statusText']);
+		$('body').replaceWith(error['responseText']);
+		
 	}
 
 	//la fonction pour créer la carte, data est l'objet json renvoyer par la fonction scraping de python
@@ -56,46 +58,59 @@ $(document).ready(function(){
 			});
 			L.marker( [ data['results'][i]['lat'] , data['results'][i]['lng'] ],{icon: myIcon}).addTo(mymap);
 		});
+
+		// affichage des images quand on les clique 
+		$(".leaflet-marker-pane > img").click(function(){                      // quand on clique sur une image sur la carte
+			var src = $(this).attr('src');                                     // chercher l'url de l'image 
+			var index = data['results'].findIndex(x => x.img == src);          // chercher l'index de l'image dans la liste des images
+			var image = data['results'][index];                                // rÃ©cupÃ©rer l'image comme un dictionnaire 
+
+			/*
+				image['name'] nous donne la location choisi par geoname
+				image['text'] nous donne le text sur l'image
+				image['lng'] nous donne la longitude
+				image['alt'] nous donne la laltitude 
+				image['img'] nous donne l'url de l'image 
+				image['url'] nous donne l'url de la post (la publication sur reddit)
+				image['date'] nous donne la date de l'image tel que:
+					image['date']['year']   nous donne l'annÃ©e 
+					image['date']['month']  nous donne le mois 
+					image['date']['day']    nous donne le jour du mois
+					image['date']['hour']   nous donne l'heure
+					image['date']['min']    nous donne la minute 
+					image['date']['sec']    nous donne la seconde 
+				image['author'] nous donne des informations sur l'author tel que:
+					image['author']['name']       nous donne son nom
+					image['author']['icon']       nous donne sa photo de profils
+					image['author']['profile']    nous donne l'url vers son profile
+			*/
+
+
+			//affichage de l'image
+			var html='<div id="replace">';
+			html+= '<p>'+image['text']+'</p>';
+			html+= '<img src="'+image['img']+'">';
+			html+= '<button id="signaler"> signaler </button>';
+			html+= '</div>';
+			$("#replace").replaceWith(html);
+
+			$("#signaler").click(function(){
+				$.ajax({
+					type:"POST",
+					url:"/report",
+					datatype:"json",
+					data:image,
+					success: reportDone        //appeler la fonction pour créer la carte si la requête a réussi
+				}).fail(printError);          //envoyer un message d'error si la requête a échoué
+			});
+
+		});
+
 	}
 
-	// affichage des images quand on les clique 
-	$(".leaflet-marker-icon").click(function(){                      // quand on clique sur une image sur la carte
-		var src = $(this).attr('src');                                     // chercher l'url de l'image 
-		alert("src "+src);
-		var index = data['results'].findIndex(x => x.img == src);          // chercher l'index de l'image dans la liste des images
-		alert("index "+index);
-		var image = data['results'][index];                                // récupérer l'image comme un dictionnaire 
-
-		/*
-			image['lng'] nous donne la longitude
-			image['alt'] nous donne la laltitude 
-			image['img'] nous donne l'url de l'image 
-			image['url'] nous donne l'url de la post (la publication sur reddit)
-			image['date'] nous donne la date de l'image tel que:
-				image['date']['year']   nous donne l'année 
-				image['date']['month']  nous donne le mois 
-				image['date']['day']    nous donne le jour du mois
-				image['date']['hour']   nous donne l'heure
-				image['date']['min']    nous donne la minute 
-				image['date']['sec']    nous donne la seconde 
-			image['author'] nous donne des informations sur l'author tel que:
-				image['author']['name']       nous donne son nom
-				image['author']['icon']       nous donne sa photo de profils
-				image['author']['profile']    nous donne l'url vers son profile
-
-		*/
-
-
-		//affichage de l'image
-		alert("vous avez cliquer sur l'image "+index);
-
-
-
-
-
-
-
-	});
-
-
+	function reportDone(){
+		$("#signaler").replaceWith("<p>L'image a été sigalée, notre équipe de testeur vont vérifier le placement de l'image");
+	}
+	
+	
 });
