@@ -34,7 +34,8 @@ updater.reinit({
 											   'https://i.redd.it/ldo1mxojjug41.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
-											   'https://i.redd.it/2qhzpuf77se41.jpg']
+											   'https://i.redd.it/2qhzpuf77se41.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg']
 								},
 					'other_field': {
 									'name': 'search_version',
@@ -55,7 +56,8 @@ updater.reinit({
 											   'https://i.redd.it/ldo1mxojjug41.jpg',
 											   'https://i.redd.it/lnckwb6v4ee41.jpg',
 											   'https://i.redd.it/6wbjlunbdlc41.jpg',
-											   'https://i.redd.it/2qhzpuf77se41.jpg']
+											   'https://i.redd.it/2qhzpuf77se41.jpg',
+											   'https://i.redd.it/ldo1mxojjug41.jpg']
 								},
 					'other_field': {
 									'name': 'search_version',

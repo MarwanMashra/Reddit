@@ -10,8 +10,8 @@ git remote rm origin
 git remote add origin <nom_dépôt>		e.g. https://github.com/MarwanMashra/Reddit.git
 	Ajoute le dépôt à la liste des dépôts distants. Le dépôt est le même pour le master ou les branches.
 
-git pull
-	Pull le contenu du dépôt distant. Ne pas oublier de le faire sur sa branche master local, pas juste sur la branche 		personnelle.
+git pull origin <nom_dépôt distant>
+	Pull le contenu du dépôt distant. Ne pas oublier de le faire sur sa branche master local, pas juste sur la branche 		personnelle (ou on peut merge plus tard avec le master local).
 
 git push origin <nom_de_branche>
 	Push le contenu du dépôt local sur la branche.
