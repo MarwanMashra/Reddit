@@ -10,8 +10,22 @@ mdb = Blueprint('mdb',__name__)
 
 
 
-# @mdb.route('/report',methods=['GET'])
-# def get
+"""Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais lieu
+choisi). L'information est rajoutée au document dans la base de données, ce qui le
+rend disponible pour le test avancé.
+"""
+@mdb.route('/report',methods=['POST'])
+def report():
+	response = json.loads(request.data.decode('utf-8'))
+	update = mongo.MongoUpd({
+								'update': 'test_result',
+								'newvalue': 'NOT_OK',
+								'id_field': {'name': 'img_url', 'values': [response['img']]},
+								'other_field': {'name': 'search_version', 'value': response['search_version']}
+							})
+	update.updatedb('Resultats_RGN','$set')
+
+	return jsonify(status='OK')
 
 
 
@@ -28,9 +42,9 @@ def get_count():
 
 
 
-"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du scraping)
-de la base de données, en fonction du testeur qui a lancé la requête, et renvoie en format
-JSON des résultats à la page de tests.
+"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du
+scraping) de la base de données, en fonction du testeur qui a lancé la requête, et
+renvoie en format JSON des résultats à la page de tests.
 """
 @mdb.route('/get_results',methods=['GET'])
 def get_results():
@@ -87,7 +101,7 @@ def send_results():
 	update = mongo.MongoUpd({
 								'update': 'num_answers',
 								'newvalue': 1,
-								'id_field': {'name': 'user_id','values': [tester]}
+								'id_field': {'name': 'user_id', 'values': [tester]}
 							})
 	update.updatedb('Testeurs','$inc')
 

@@ -108,7 +108,7 @@ class MongoSave(Mongo):
 """Mises à jour: syntaxe du dico de chargement:
 {
 	update: <champ à mettre à jour>
-	newvalue: <nouvelle valeur> OU [<nouvelle valeur>,...] #liste de même taille que la liste id_field['name']
+	newvalue: <nouvelle valeur> OU [<nouvelle valeur>,...] #liste de même taille que la liste id_field['values']
 	id_field: {
 		name: <nom du champ> #par exemple img_url
 		values: [<valeur du champs>,...]

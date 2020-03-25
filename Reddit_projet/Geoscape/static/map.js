@@ -98,8 +98,8 @@ $(document).ready(function(){
 				$.ajax({
 					type:"POST",
 					url:"/report",
-					datatype:"json",
-					data:image,
+					contentType: "application/json;charset=UTF-8",
+					data: JSON.stringify(image),
 					success: reportDone        //appeler la fonction pour créer la carte si la requête a réussi
 				}).fail(printError);          //envoyer un message d'error si la requête a échoué
 			});
@@ -109,7 +109,7 @@ $(document).ready(function(){
 	}
 
 	function reportDone(){
-		$("#signaler").replaceWith("<p>L'image a été sigalée, notre équipe de testeur vont vérifier le placement de l'image");
+		$("#signaler").replaceWith("<p>L'image a été sigalée. Notre équipe de testeurs va vérifier le placement de l'image.");
 	}
 	
 	

@@ -135,7 +135,7 @@ def scraping():
 	database_list = []
 
 	#Résultats de la recherche dans le subreddit
-	test_posts = target_sub.search(query,limit=50)
+	test_posts = target_sub.search(query,limit=30)
 	for post in test_posts:
 		try:
 			title = post.title
