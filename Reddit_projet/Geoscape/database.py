@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
+import json
 import Geoscape.mongo as mongo
 from flask import Blueprint, jsonify, request, session
 from math import floor, log2
@@ -60,10 +61,12 @@ def send_results():
 	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	response = json.loads(request.data.decode('utf-8'))
 	tester = session['username']
-	test_results = response['results']
 	version = response['search_version']
-	doc_results = list(zip(response['img_url'],test_results))
+	test_results = response['results']
+	url_list = response['img_url']
+	doc_results = list(zip(url_list,test_results))
 
+	new_document = {}
 	for url, test_item in doc_results:
 		if test_item['lieux_choisis']: #Si la liste est vide, le testeur n'a pas su répondre
 			new_document = {
@@ -101,7 +104,7 @@ def send_results():
 	update.reinit({
 					'update': 'testers',
 					'newvalue': sum_list,
-					'id_field': {'name': 'img_url', 'values': response['img_url']},
+					'id_field': {'name': 'img_url', 'values': url_list},
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
 	update.updatedb('Resultats_RGN','$set')
