@@ -1,19 +1,26 @@
 #mapid{
 	width: 700px; 
 	height: 500px;
+	float: left;
 }
 .container{
 	height: 300%;
 	width: 300%;
+
 }
 
 .image{
 	height: 90%;
 	width: 90%;
 }
+
 #error{
 	display: none;
 	color: red;
+}
+#replace > img{
+	height: 400px;
+	width: 800px;
 }
 
 
