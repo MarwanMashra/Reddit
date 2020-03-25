@@ -60,8 +60,22 @@ def send_results():
 	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	response = json.loads(request.data.decode('utf-8'))
 	tester = session['username']
-	documents = mongo.MongoSave(response['results'])
+	test_results = response['results']
+	version = response['search_version']
+	doc_results = list(zip(response['img_url'],test_results))
+
+	for url, test_item in doc_results:
+		if test_item['lieux_choisis']: #Si la liste est vide, le testeur n'a pas su répondre
+			new_document = {
+								'tester': tester,
+								'search_version': version,
+								'img_url': url,
+								'locations_selected': test_item['lieux_choisis'],
+								'sufficient': test_item['suffisant']
+						}
+	documents = mongo.MongoSave([new_document])
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
+
 	update = mongo.MongoUpd({
 								'update': 'num_answers',
 								'newvalue': 1,
@@ -72,10 +86,6 @@ def send_results():
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
 	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
-	version = response['results'][0]['search_version']
-	url_list = []
-	for dic in response['results']:
-		url_list.append(dic['img_url'])
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
 					{'testers': 1, '_id': 0})
@@ -91,7 +101,7 @@ def send_results():
 	update.reinit({
 					'update': 'testers',
 					'newvalue': sum_list,
-					'id_field': {'name': 'img_url', 'values': url_list},
+					'id_field': {'name': 'img_url', 'values': response['img_url']},
 					'other_field': {'name': 'search_version', 'value': version} 
 				 })
 	update.updatedb('Resultats_RGN','$set')
