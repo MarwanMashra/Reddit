@@ -138,109 +138,109 @@ def scraping():
 	test_posts = target_sub.search(query,limit=20)
 	for post in test_posts:
 		try:
-			if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
-				#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
-				res = re.search('^(?:\[OC\])?([^[(]+)',post.title)
+			title = post.title
 		except praw.exceptions.APIException as e:
 			print(e.message())
 			continue
-		else:
-			pass
 
-		if (res):
-			print(res.group(1))
+		if re.search('.*'+country+'[.,/[( ]',title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+			#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
+			res = re.search('^(?:\[OC\])?([^[(]+)',title)
+			if (res):
+				print(res.group(1))
 
-			#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
-			reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
-						  exclude_nottags=True)
+				#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
+				reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
+							  exclude_nottags=True)
 
-			#Pour les pays à nom composé
-			country_split = country.casefold().split(' ')
-			size = len(country_split)
-			indexes = []
-			if size > 1:
-				name_tags = [t[0].casefold() for t in reddit_tags]
-				for window in enumerate(list(windowed(name_tags,size))):
-					if all(window[1][i] == country_split[i] for i in range(size)):
-						indexes.extend([i for i in range(window[0],window[0]+size)])
+				#Pour les pays à nom composé
+				country_split = country.casefold().split(' ')
+				size = len(country_split)
+				indexes = []
+				if size > 1:
+					name_tags = [t[0].casefold() for t in reddit_tags]
+					for window in enumerate(list(windowed(name_tags,size))):
+						if all(window[1][i] == country_split[i] for i in range(size)):
+							indexes.extend([i for i in range(window[0],window[0]+size)])
 
-			for index, tag in enumerate(reddit_tags):
-				if tag[1] == 'NP': #Tag nom propre sous Windows
-					reddit_tags[index] = (tag[0],'NP0',tag[2])
-				if tag[0].casefold() == country.casefold() or index in indexes:
-					reddit_tags[index] = (tag[0],'CTY',tag[2])
-			pprint.pprint(reddit_tags)
+				for index, tag in enumerate(reddit_tags):
+					if tag[1] == 'NP': #Tag nom propre sous Windows
+						reddit_tags[index] = (tag[0],'NP0',tag[2])
+					if tag[0].casefold() == country.casefold() or index in indexes:
+						reddit_tags[index] = (tag[0],'CTY',tag[2])
+				pprint.pprint(reddit_tags)
 
-			#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
-			location_list = [
-								' '.join([t[0] for t in list(g)]) if k
-								else len(list(g))
-								for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
-							]
+				#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
+				location_list = [
+									' '.join([t[0] for t in g]) if k
+									else len(list(g))
+									for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
+								]
 
-			print('Lieux trouvés:',end='')
-			print(location_list,'\n')
+				print('Lieux trouvés:',end='')
+				print(location_list,'\n')
 
-			#Geonames
-			if location_list:
-				dic_mongo = {
-								'link': post.permalink,
-								'img_url': post.url, #Lien direct vers la photo
+				#Geonames
+				if location_list:
+					dic_mongo = {
+									'link': post.permalink,
+									'img_url': post.url, #Lien direct vers la photo
+									'search_version': rgnversion,
+									'country': country,
+									'title': res.group(1).strip(),
+									'tag_list': reddit_tags,
+									'location_list': location_list
+								}
+
+					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
+					date = time.gmtime(post.created_utc)
+					dic_tmp = {
+								'img': post.url,
+								'text': title,
 								'search_version': rgnversion,
-								'country': country,
-								'title': res.group(1).strip(),
-								'tag_list': reddit_tags,
-								'location_list': location_list
-							}
+								'url': 'https://www.reddit.com'+post.permalink,
+								'date': {
+											'year': date.tm_year,
+											'month': date.tm_mon,
+											'day': date.tm_mday,
+											'hour': date.tm_hour,
+											'min': date.tm_min,
+											'sec': date.tm_sec
+										},
+								'author': {
+											'name': post.author.name,
+											'icon': post.author.icon_img,
+											'profile': 'https://www.reddit.com/user/'
+													   +post.author.name
+										  }
+							  }
 
-				#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-				date = time.gmtime(post.created_utc)
-				dic_tmp = {
-							'img': post.url,
-							'text':post.title,
-							'search_version': rgnversion,
-							'url': 'https://www.reddit.com'+post.permalink,
-							'date': {
-										'year': date.tm_year,
-										'month': date.tm_mon,
-										'day': date.tm_mday,
-										'hour': date.tm_hour,
-										'min': date.tm_min,
-										'sec': date.tm_sec
-									},
-							'author': {
-										'name': post.author.name,
-										'icon': post.author.icon_img,
-										'profile': 'https://www.reddit.com/user/'+post.author.name
-									  }
-						  }
+					"""Recherche de match exact pour tous les lieux de la liste.
+					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
+					Si aucun résultat, on passe à une fuzzy search.
+					"""
+					this_search = [True,False,False,False,False,True]
 
-				"""Recherche de match exact pour tous les lieux de la liste.
-				Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
-				Si aucun résultat, on passe à une fuzzy search.
-				"""
-				this_search = [True,False,False,False,False,True]
+					while 'name' not in dic_tmp and this_search:
+						for loc in location_list:
+							if type(loc) == str:
+								if geonames_query(loc,country_code,dic_results,dic_tmp,
+										dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
+									break
+						this_search = this_search[2:]
 
-				while 'name' not in dic_tmp and this_search:
-					for loc in location_list:
-						if type(loc) == str:
-							if geonames_query(loc,country_code,dic_results,dic_tmp,
-									dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
-								break
-					this_search = this_search[2:]
+					#En dernier recours, le pays lui-même s'il est dans le titre
+					if 'name' not in dic_tmp:
+						if country.casefold() in res.group(1):
+							geonames_query(country,country_code,dic_results,dic_tmp,
+								dic_mongo,exact=True)
 
-				#En dernier recours, le pays lui-même s'il est dans le titre
-				if 'name' not in dic_tmp:
-					if country.casefold() in res.group(1).casefold():
-						geonames_query(country,country_code,dic_results,dic_tmp,
-							dic_mongo,exact=True)
-
-				if 'location' in dic_mongo:
-					dic_tostore = copy.deepcopy(dic_mongo)
-					database_list.append(dic_tostore)
-				print('\n###############')
-			else:
-				print('')
+					if 'location' in dic_mongo:
+						dic_tostore = copy.deepcopy(dic_mongo)
+						database_list.append(dic_tostore)
+					print('\n###############')
+				else:
+					print('')
 
 	#Chargement dans la base de données
 	documents = mongo.MongoSave(database_list)
