@@ -1,9 +1,12 @@
-h1{
+h2{
 	color: red;
 }
-label{
+.label{
 	cursor: pointer;
 }
-input[type=checkbox]{
+.checkbox{
+	display: none;
+}
+#goToMap{
 	display: none;
 }
