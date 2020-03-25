@@ -10,6 +10,11 @@ mdb = Blueprint('mdb',__name__)
 
 
 
+# @mdb.route('/report',methods=['GET'])
+# def get
+
+
+
 """Renvoit le nombre total de documents que le testeur en session doit tester.
 """
 @mdb.route('/get_count',methods=['GET'])

@@ -135,7 +135,7 @@ def scraping():
 	database_list = []
 
 	#Résultats de la recherche dans le subreddit
-	test_posts = target_sub.search(query,limit=20)
+	test_posts = target_sub.search(query,limit=50)
 	for post in test_posts:
 		try:
 			title = post.title
@@ -153,7 +153,7 @@ def scraping():
 				reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
 							  exclude_nottags=True)
 
-				#Pour les pays à nom composé
+				#Le nom du pays est exclu des lieux potentiels; rajouté seulement en dernier recours
 				country_split = country.casefold().split(' ')
 				size = len(country_split)
 				indexes = []
@@ -231,7 +231,7 @@ def scraping():
 
 					#En dernier recours, le pays lui-même s'il est dans le titre
 					if 'name' not in dic_tmp:
-						if country.casefold() in res.group(1):
+						if country in res.group(1):
 							geonames_query(country,country_code,dic_results,dic_tmp,
 								dic_mongo,exact=True)
 
