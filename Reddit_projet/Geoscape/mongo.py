@@ -154,6 +154,7 @@ class MongoUpd(Mongo):
 							 {operator: {self.filter['update']: self.filter['newvalue']}})
 
 
+
 """Recherche et extraction d'un document sous forme de liste de document(s).
 Format paramètres:
 La requête:
@@ -201,6 +202,10 @@ class MongoLoad(Mongo):
 			return list(coll.find(self.query,self.projection))
 		else:
 			return list(coll.find(self.query,self.projection,limit=limit))
+
+	def dltdocument(self,coll_toupd):
+		coll = client[coll_toupd]
+		coll.find_one_and_delete(self.query,projection={'_id': 0})
 
 
 

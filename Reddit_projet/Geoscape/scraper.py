@@ -181,66 +181,66 @@ def scraping():
 				print(location_list,'\n')
 
 				#Geonames
-				if location_list:
-					dic_mongo = {
-									'link': post.permalink,
-									'img_url': post.url, #Lien direct vers la photo
-									'search_version': rgnversion,
-									'country': country,
-									'title': res.group(1).strip(),
-									'tag_list': reddit_tags,
-									'location_list': location_list
-								}
-
-					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-					date = time.gmtime(post.created_utc)
-					dic_tmp = {
-								'img': post.url,
-								'text': title,
+				dic_mongo = {
+								'link': post.permalink,
+								'img_url': post.url, #Lien direct vers la photo
 								'search_version': rgnversion,
-								'url': 'https://www.reddit.com'+post.permalink,
-								'date': {
-											'year': date.tm_year,
-											'month': date.tm_mon,
-											'day': date.tm_mday,
-											'hour': date.tm_hour,
-											'min': date.tm_min,
-											'sec': date.tm_sec
-										},
-								'author': {
-											'name': post.author.name,
-											'icon': post.author.icon_img,
-											'profile': 'https://www.reddit.com/user/'
-													   +post.author.name
-										  }
-							  }
+								'country': country,
+								'title': res.group(1).strip(),
+								'tag_list': reddit_tags,
+								'location_list': location_list
+							}
 
-					"""Recherche de match exact pour tous les lieux de la liste.
-					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
-					Si aucun résultat, on passe à une fuzzy search.
-					"""
-					this_search = [True,False,False,False,False,True]
+				#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
+				date = time.gmtime(post.created_utc)
+				dic_tmp = {
+							'img': post.url,
+							'text': title,
+							'search_version': rgnversion,
+							'url': 'https://www.reddit.com'+post.permalink,
+							'date': {
+										'year': date.tm_year,
+										'month': date.tm_mon,
+										'day': date.tm_mday,
+										'hour': date.tm_hour,
+										'min': date.tm_min,
+										'sec': date.tm_sec
+									},
+							'author': {
+										'name': post.author.name,
+										'icon': post.author.icon_img,
+										'profile': 'https://www.reddit.com/user/'
+												   +post.author.name
+									  }
+						  }
 
-					while 'name' not in dic_tmp and this_search:
-						for loc in location_list:
-							if type(loc) == str:
-								if geonames_query(loc,country_code,dic_results,dic_tmp,
-										dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
-									break
-						this_search = this_search[2:]
+				"""Recherche de match exact pour tous les lieux de la liste.
+				Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
+				Si aucun résultat, on passe à une fuzzy search.
+				"""
+				this_search = [True,False,False,False,False,True]
 
-					#En dernier recours, le pays lui-même s'il est dans le titre
-					if 'name' not in dic_tmp:
-						if country in res.group(1):
-							geonames_query(country,country_code,dic_results,dic_tmp,
-								dic_mongo,exact=True)
+				while 'name' not in dic_tmp and this_search:
+					for loc in location_list:
+						if type(loc) == str:
+							if geonames_query(loc,country_code,dic_results,dic_tmp,
+									dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
+								break
+					this_search = this_search[2:]
 
-					if 'location' in dic_mongo:
-						dic_tostore = copy.deepcopy(dic_mongo)
-						database_list.append(dic_tostore)
-					print('\n###############')
-				else:
-					print('')
+				#En dernier recours, le pays lui-même s'il est dans le titre
+				if 'name' not in dic_tmp and country in res.group(1):
+					location_list.append(country)
+					dic_mongo['location_list'] = location_list
+					geonames_query(country,country_code,dic_results,dic_tmp,
+						dic_mongo,exact=True)
+
+				if 'location' in dic_mongo:
+					dic_tostore = copy.deepcopy(dic_mongo)
+					database_list.append(dic_tostore)
+				print('\n###############')
+			else:
+				print('')
 
 	#Chargement dans la base de données
 	documents = mongo.MongoSave(database_list)

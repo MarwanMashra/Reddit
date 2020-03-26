@@ -109,7 +109,7 @@ $(document).ready(function(){
 	}
 
 	function reportDone(){
-		$("#signaler").replaceWith("<p>L'image a été sigalée. Notre équipe de testeurs va vérifier le placement de l'image.");
+		$("#signaler").replaceWith("<p>L'image a été signalée. Notre équipe de testeurs va vérifier le placement de l'image.");
 	}
 	
 	

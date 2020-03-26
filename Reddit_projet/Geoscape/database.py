@@ -25,6 +25,18 @@ def report():
 							})
 	update.updatedb('Resultats_RGN','$set')
 
+	test_code = 2**4 + 2**5 + 2**7
+	bytesize = floor(log2(test_code)/8) + 1
+	test_code = test_code.to_bytes(bytesize,byteorder='big')
+	
+	update.reinit({
+					'update': 'testers',
+					'newvalue': test_code,
+					'id_field': {'name': 'img_url', 'values': [response['img']]},
+					'other_field': {'name': 'search_version', 'value': response['search_version']}
+				  })
+	update.updatedb('Resultats_RGN','$set')
+
 	return jsonify(status='OK')
 
 
