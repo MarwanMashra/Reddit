@@ -180,12 +180,18 @@ $(document).ready(function(){
 	}
 
 	function genkeywords(){
+		var loc_list=data['results'][index]['location_list'];
+		var proper_loc=[];
+		$(loc_list).each(function(i,loc){
+			if(typeof loc !== "number"){
+				proper_loc.push(loc);
+			}
+		});
 		var keywords="<br><br><p>Est-ce que le lieu est présent dans ces mots clés :";
-		keywords+='<p>'+data['results'][index]['location_list']+'</p>';
+		//keywords+='<p>'+data['results'][index]['location_list']+'</p>';
+		keywords+='<p>'+proper_loc+'</p>';
 		keywords+='<input type="checkbox" id="keywords" name="keywords" value="keywords" >';
 		keywords+='<label for="keywords"> Oui, il est présent</label></p>';
-
-		
 
 		return keywords;
 
