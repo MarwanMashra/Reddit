@@ -11,17 +11,16 @@ rgn = Blueprint('rgn',__name__)
 
 
 
-"""Geonames feature classes ('fcl')
-	A   Administrative divisions
-	H   Surface waters
-	L   Parks/reserves
-	P   Populated places
-	R   Roads
-	S   Structures
-	T   Mountains/Islands
-	U   Undersea
-	V   Woodlands
+"""Récupère les documents déjà stockés dans la base de données, pour un pays et une version
+du scraper.
 """
+def mongo_query(country, version):
+	dbfinder = mongo.MongoLoad({'search_version': version, 'country': country},
+							   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1, 'lat': 1, '_id': 0})
+	documents = dbfinder.retrieve('Resultats_RGN',limit=20)
+
+	return documents
+
 
 
 """Stockage dans un dictionnaire des informations sur le résultat geonames."""
@@ -43,6 +42,17 @@ Stockage des informations dans un dico temporaire qui sera ensuite rajouté au d
 tous les résultats, et dans un dico qui sera enregistré dans la base de données.
 Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
 la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
+"""
+"""Geonames feature classes ('fcl')
+	A   Administrative divisions
+	H   Surface waters
+	L   Parks/reserves
+	P   Populated places
+	R   Roads
+	S   Structures
+	T   Mountains/Islands
+	U   Undersea
+	V   Woodlands
 """
 def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False):
 	url = 'http://api.geonames.org/searchJSON'
@@ -96,18 +106,29 @@ lieux sont recherchés sur geonames. Les résultats de cette dernière recherche
 deux dictionnaires, l'un pour l'affichage des photos sur le site et l'autre pour stocker les
 résultats dans la base de données sur mongoDB.
 """
-@rgn.route('/scraping',methods=['GET','POST'])
+@rgn.route('/scraping',methods=['GET'])
 def scraping():
 
+	#Paramètres de la requête Javascript
+	rgnversion = request.args.get('search_version')
+	country = request.args.get('country')
+	country_code = request.args.get('country_code')
+	scrape_requested = request.args.get('scraping')
+
+	if scrape_requested == 'false':
+		scrape_requested = False
+	else:
+		scrape_requested = True
+
+	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
+	if not scrape_requested:
+		stored_docs = mongo_query(country,rgnversion)
+
+	#Configuration recherche reddit
 	reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
 		   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
-	#Configuration recherche reddit
-	rgnversion = '1.00'                      
-	target_sub = reddit.subreddit('EarthPorn')
-	#Paramètres de la requête Javascript
-	country = request.args.get('country')
-	country_code = request.args.get('country_code')
+	target_sub = reddit.subreddit('EarthPorn')                     
 	query = 'title:'+country
 	print('\033[92m'+target_sub.display_name+'\033[0m'
 		  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
@@ -134,117 +155,130 @@ def scraping():
 	#Liste de chargement pour la base de données
 	database_list = []
 
-	#Résultats de la recherche dans le subreddit
-	test_posts = target_sub.search(query,limit=30)
-	for post in test_posts:
-		try:
-			title = post.title
-		except praw.exceptions.APIException as e:
-			print(e.message())
-			continue
+	if not scrape_requested:
+		for doc in stored_docs:
+			dic_results['head']['total'] += 1
+			dic_results['results'].append({
+											'img': doc['img_url'],
+											'text': doc['title'],
+											'search_version': rgnversion,
+											'name': doc['name'],
+											'lng': doc['lng'],
+											'lat': doc['lat']
+										})
 
-		if re.search('.*'+country+'[.,/[( ]',title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
-			#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
-			res = re.search('^(?:\[OC\])?([^[(]+)',title)
-			if (res):
-				print(res.group(1))
+	else:
+		#Résultats de la recherche dans le subreddit
+		test_posts = target_sub.search(query,limit=20)
+		for post in test_posts:
+			try:
+				title = post.title
+			except praw.exceptions.APIException as e:
+				print(e.message())
+				continue
 
-				#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
-				reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
-							  exclude_nottags=True)
+			if re.search('.*'+country+'[.,/[( ]',title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+				#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
+				res = re.search('^(?:\[OC\])?([^[(]+)',title)
+				if (res):
+					print(res.group(1))
 
-				#Le nom du pays est exclu des lieux potentiels; rajouté seulement en dernier recours
-				country_split = country.casefold().split(' ')
-				size = len(country_split)
-				indexes = []
-				if size > 1:
-					name_tags = [t[0].casefold() for t in reddit_tags]
-					for window in enumerate(list(windowed(name_tags,size))):
-						if all(window[1][i] == country_split[i] for i in range(size)):
-							indexes.extend([i for i in range(window[0],window[0]+size)])
+					#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
+					reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
+								  exclude_nottags=True)
 
-				for index, tag in enumerate(reddit_tags):
-					if tag[1] == 'NP': #Tag nom propre sous Windows
-						reddit_tags[index] = (tag[0],'NP0',tag[2])
-					if tag[0].casefold() == country.casefold() or index in indexes:
-						reddit_tags[index] = (tag[0],'CTY',tag[2])
-				pprint.pprint(reddit_tags)
+					#Le nom du pays est exclu des lieux potentiels; rajouté seulement en dernier recours
+					country_split = country.casefold().split(' ')
+					size = len(country_split)
+					indexes = []
+					if size > 1:
+						name_tags = [t[0].casefold() for t in reddit_tags]
+						for window in enumerate(list(windowed(name_tags,size))):
+							if all(window[1][i] == country_split[i] for i in range(size)):
+								indexes.extend([i for i in range(window[0],window[0]+size)])
 
-				#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
-				location_list = [
-									' '.join([t[0] for t in g]) if k
-									else len(list(g))
-									for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
-								]
+					for index, tag in enumerate(reddit_tags):
+						if tag[1] == 'NP': #Tag nom propre sous Windows
+							reddit_tags[index] = (tag[0],'NP0',tag[2])
+						if tag[0].casefold() == country.casefold() or index in indexes:
+							reddit_tags[index] = (tag[0],'CTY',tag[2])
+					pprint.pprint(reddit_tags)
 
-				print('Lieux trouvés:',end='')
-				print(location_list,'\n')
+					#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
+					location_list = [
+										' '.join([t[0] for t in g]) if k
+										else len(list(g))
+										for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
+									]
 
-				#Geonames
-				dic_mongo = {
-								'link': post.permalink,
-								'img_url': post.url, #Lien direct vers la photo
+					print('Lieux trouvés:',end='')
+					print(location_list,'\n')
+
+					#Geonames
+					dic_mongo = {
+									'link': post.permalink,
+									'img_url': post.url, #Lien direct vers la photo
+									'search_version': rgnversion,
+									'country': country,
+									'title': res.group(1).strip(),
+									'tag_list': reddit_tags,
+									'location_list': location_list
+								}
+
+					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
+					date = time.gmtime(post.created_utc)
+					dic_tmp = {
+								'img': post.url,
+								'text': title,
 								'search_version': rgnversion,
-								'country': country,
-								'title': res.group(1).strip(),
-								'tag_list': reddit_tags,
-								'location_list': location_list
-							}
+								'url': 'https://www.reddit.com'+post.permalink,
+								'date': {
+											'year': date.tm_year,
+											'month': date.tm_mon,
+											'day': date.tm_mday,
+											'hour': date.tm_hour,
+											'min': date.tm_min,
+											'sec': date.tm_sec
+										},
+								'author': {
+											'name': post.author.name,
+											'icon': post.author.icon_img,
+											'profile': 'https://www.reddit.com/user/'
+													   +post.author.name
+										  }
+							  }
 
-				#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
-				date = time.gmtime(post.created_utc)
-				dic_tmp = {
-							'img': post.url,
-							'text': title,
-							'search_version': rgnversion,
-							'url': 'https://www.reddit.com'+post.permalink,
-							'date': {
-										'year': date.tm_year,
-										'month': date.tm_mon,
-										'day': date.tm_mday,
-										'hour': date.tm_hour,
-										'min': date.tm_min,
-										'sec': date.tm_sec
-									},
-							'author': {
-										'name': post.author.name,
-										'icon': post.author.icon_img,
-										'profile': 'https://www.reddit.com/user/'
-												   +post.author.name
-									  }
-						  }
+					"""Recherche de match exact pour tous les lieux de la liste.
+					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
+					Si aucun résultat, on passe à une fuzzy search.
+					"""
+					this_search = [True,False,False,False,False,True]
 
-				"""Recherche de match exact pour tous les lieux de la liste.
-				Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
-				Si aucun résultat, on passe à une fuzzy search.
-				"""
-				this_search = [True,False,False,False,False,True]
+					while 'name' not in dic_tmp and this_search:
+						for loc in location_list:
+							if type(loc) == str:
+								if geonames_query(loc,country_code,dic_results,dic_tmp,
+										dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
+									break
+						this_search = this_search[2:]
 
-				while 'name' not in dic_tmp and this_search:
-					for loc in location_list:
-						if type(loc) == str:
-							if geonames_query(loc,country_code,dic_results,dic_tmp,
-									dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
-								break
-					this_search = this_search[2:]
+					#En dernier recours, le pays lui-même s'il est dans le titre
+					if 'name' not in dic_tmp and country in res.group(1):
+						location_list.append(country)
+						dic_mongo['location_list'] = location_list
+						geonames_query(country,country_code,dic_results,dic_tmp,
+							dic_mongo,exact=True)
 
-				#En dernier recours, le pays lui-même s'il est dans le titre
-				if 'name' not in dic_tmp and country in res.group(1):
-					location_list.append(country)
-					dic_mongo['location_list'] = location_list
-					geonames_query(country,country_code,dic_results,dic_tmp,
-						dic_mongo,exact=True)
+					if 'location' in dic_mongo:
+						dic_tostore = copy.deepcopy(dic_mongo)
+						database_list.append(dic_tostore)
+					print('\n###############')
+				else:
+					print('')
 
-				if 'location' in dic_mongo:
-					dic_tostore = copy.deepcopy(dic_mongo)
-					database_list.append(dic_tostore)
-				print('\n###############')
-			else:
-				print('')
-
-	#Chargement dans la base de données
-	documents = mongo.MongoSave(database_list)
-	documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
+		#Chargement dans la base de données des documents générés par le scrape
+		documents = mongo.MongoSave(database_list)
+		documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
 
 	return jsonify(dic_results)
 

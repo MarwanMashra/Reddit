@@ -9,7 +9,7 @@ $(document).ready(function(){
 
 
 	//création de selecteur search_version	
-	function createVerionSelector(search_version){
+	function createVersionSelector(search_version){
 		var select= '<select name="search_version" id="search_version">';
 		select+= '<option value="'+search_version[search_version.length -1]+'">Dernière Version</option>';
 		$.each(search_version,(index,version)=>{
@@ -23,8 +23,8 @@ $(document).ready(function(){
 	$.ajax({
 		type:"GET",
 		url:"/get_list_version",
-		success: createVerionSelector,
-		error:  ()=>{var search_version=["1.00"];createVerionSelector(search_version);}
+		success: createVersionSelector,
+		error:  ()=>{var search_version=["1.00"];createVersionSelector(search_version);}
 	});          
 	
 	

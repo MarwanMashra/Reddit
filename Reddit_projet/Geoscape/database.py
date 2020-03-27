@@ -10,6 +10,27 @@ mdb = Blueprint('mdb',__name__)
 
 
 
+"""Crée la collection de stockage des versions du scraper si elle n'existe pas. Récupère
+ensuite toutes les versions et envoie la liste résultat à la page de lancement du scrape.
+"""
+@mdb.route('/get_list_version',methods=['GET'])
+def get_list_version():
+	dbfinder = mongo.MongoLoad(proj={'search_version': 1, '_id': 0})
+
+	if not dbfinder.mongocheck('Versions_Scrape'):
+		version_doc = mongo.MongoSave([{'search_version': '1.00', 'submissions_scraped': 0,
+									   'accuracy': 0}])
+		version_doc.storeindb('Versions_Scrape',search_version='D')
+
+	versions = dbfinder.retrieve('Versions_Scrape')
+	version_list = []
+	for doc in versions:
+		version_list.append(doc['search_version'])
+
+	return jsonify(version_list)
+
+
+
 """Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais lieu
 choisi). L'information est rajoutée au document dans la base de données, ce qui le
 rend disponible pour le test avancé.
@@ -21,7 +42,8 @@ def report():
 								'update': 'test_result',
 								'newvalue': 'NOT_OK',
 								'id_field': {'name': 'img_url', 'values': [response['img']]},
-								'other_field': {'name': 'search_version', 'value': response['search_version']}
+								'other_field': {'name': 'search_version',
+								                'value': response['search_version']}
 							})
 	update.updatedb('Resultats_RGN','$set')
 

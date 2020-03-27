@@ -184,13 +184,13 @@ OU par exclusion
 Si on veut retourner tous les champ passer un dictionnaire vide en deuxième paramètre.
 """
 class MongoLoad(Mongo):
-	def __init__(self,dic_q,dic_p={'_id': 0}):
-		self.query = dic_q
-		self.projection = dic_p
+	def __init__(self,query=None,proj={'_id': 0}):
+		self.query = query
+		self.projection = proj
 
-	def reinit(self,dic_q,dic_p={'_id': 0}):
-		self.query = dic_q
-		self.projection = dic_p
+	def reinit(self,query,proj={'_id': 0}):
+		self.query = query
+		self.projection = proj
 
 	def retrieve(self,coll_tosearch,limit=0):
 		coll = client[coll_tosearch]
