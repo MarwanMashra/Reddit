@@ -7,6 +7,28 @@ $(document).ready(function(){
     		subdomains:['mt0','mt1','mt2','mt3']
 			}).addTo(mymap);
 
+
+	//création de selecteur search_version	
+	function createVerionSelector(search_version){
+		var select= '<select name="search_version" id="search_version">';
+		select+= '<option value="'+search_version[search_version.length -1]+'">Dernière Version</option>';
+		$.each(search_version,(index,version)=>{
+			select+= '<option value="'+version+'">'+version+'</option>';
+		});
+		select+= '</select><br>';
+		$("#search_version").replaceWith(select);
+	}
+
+	//requête get_list_version
+	$.ajax({
+		type:"GET",
+		url:"/get_list_version",
+		success: createVerionSelector,
+		error:  ()=>{var search_version=["1.00"];createVerionSelector(search_version);}
+	});          
+	
+	
+
 	//en cliquant sur le bouton
 	$("#submit").click(function(){
 		var valeur= $("#select_input").val();   //récupérer la valeur de l'input pays dans le format France,FR
@@ -23,7 +45,9 @@ $(document).ready(function(){
 				datatype:"json",
 				data:{                     //passer les paramètres au script python
 					country:pays[0],
-					country_code:pays[1]
+					country_code:pays[1],
+					search_version: $("#search_version").val(),
+					scraping: $("input[id='scraping_input']").is(':checked')
 				},
 				beforeSend:startAnimation ,
 				success: createMap        //appeler la fonction pour créer la carte si la requête a réussi
