@@ -124,23 +124,11 @@ def scraping():
 	if not scrape_requested:
 		stored_docs = mongo_query(country,rgnversion)
 
-	#Configuration recherche reddit
-	reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
-		   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
-
-	target_sub = reddit.subreddit('EarthPorn')                     
-	query = 'title:'+country
-	print('\033[92m'+target_sub.display_name+'\033[0m'
-		  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
-
-	#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
-	reddit_tagger = treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
-
-	#Coordonnées pays
+	#Dico de résultats pour l'affichage sur le site
 	search_res = requests.get('http://api.geonames.org/searchJSON?q='+country+'&username=scrapelord',
 				 auth=('scrapelord','Blorp86'))
 	search_res = search_res.json()
-	#Dico de résultats pour l'affichage sur le site
+	
 	dic_results = {
 					'head': {
 								'total': 0,
@@ -155,7 +143,7 @@ def scraping():
 	#Liste de chargement pour la base de données
 	database_list = []
 
-	if not scrape_requested:
+	if not scrape_requested and stored_docs:
 		for doc in stored_docs:
 			dic_results['head']['total'] += 1
 			dic_results['results'].append({
@@ -168,6 +156,18 @@ def scraping():
 										})
 
 	else:
+		#Configuration recherche reddit
+		reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
+			   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
+
+		target_sub = reddit.subreddit('EarthPorn')                     
+		query = 'title:'+country
+		print('\033[92m'+target_sub.display_name+'\033[0m'
+			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
+
+		#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
+		reddit_tagger = treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
+
 		#Résultats de la recherche dans le subreddit
 		test_posts = target_sub.search(query,limit=20)
 		for post in test_posts:
