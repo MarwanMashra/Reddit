@@ -6,9 +6,6 @@
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	
-	<!-- leaflet's CSS-->
-	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
 
     <!-- leaflet's javascript-->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
@@ -29,6 +26,11 @@
 	<!-- select pays est dans le ficheir pays.js, c'est pour éviter que le fichier html soit trop grand et difficile à naviger -->
 	<div id="pays"></div>
 
+	<!-- select search_version -->
+	<div id="search_version"></div>
+	
+	<input type="checkbox" name="scraping_input" id="scraping_input" value="scraping">
+	<label for="scraping_input" id="scraping_label">Vous voulez faire une nouvelle recherche d'image sur Reddit.</label>
 	<button id="submit" >Chercher</button>
 	<span id="error">Veuillez choisir un pays</span>
 	{% if username %}
