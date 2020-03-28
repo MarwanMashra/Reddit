@@ -188,7 +188,7 @@ class MongoLoad(Mongo):
 		self.query = query
 		self.projection = proj
 
-	def reinit(self,query,proj={'_id': 0}):
+	def reinit(self,query=None,proj={'_id': 0}):
 		self.query = query
 		self.projection = proj
 

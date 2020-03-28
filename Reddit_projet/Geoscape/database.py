@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import json
+import json, random
 import Geoscape.mongo as mongo
 from flask import Blueprint, jsonify, request, session
 from math import floor, log2
+from functools import reduce
 
 mdb = Blueprint('mdb',__name__)
 
 
 
-"""Crée la collection de stockage des versions du scraper si elle n'existe pas. Récupère
-ensuite toutes les versions et envoie la liste résultat à la page de lancement du scrape.
+"""Crée la collection de stockage des versions du scraper si elle n'existe pas.
+Récupère ensuite toutes les versions et envoie la liste résultat à la page de
+lancement du scrape.
 """
 @mdb.route('/get_list_version',methods=['GET'])
 def get_list_version():
@@ -31,9 +33,15 @@ def get_list_version():
 
 
 
-"""Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais lieu
-choisi). L'information est rajoutée au document dans la base de données, ce qui le
-rend disponible pour le test avancé.
+"""Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais
+lieu choisi). L'information est rajoutée au document dans la base de données, ce
+qui le rend disponible pour le test avancé.
+Sélection aléatoire de 3 testeurs à partir de la collection 'Testeurs', et stockage
+de leurs codes comme champ du document signalé.
+Ce champ 'testers' est de type BSON BinData: une chaîne en base 64 représentant un
+champ de bits de taille quelconque, ce qui permet de stocker des valeurs supérieures
+à 2^63-1.
+Le module pymongo convertit automatiquement un objet de type bytes en BinData.
 """
 @mdb.route('/report',methods=['POST'])
 def report():
@@ -47,13 +55,17 @@ def report():
 							})
 	update.updatedb('Resultats_RGN','$set')
 
-	test_code = 2**4 + 2**5 + 2**7
-	bytesize = floor(log2(test_code)/8) + 1
-	test_code = test_code.to_bytes(bytesize,byteorder='big')
+	dbfinder = mongo.MongoLoad(proj={'code': 1, '_id': 0})
+	tester_list = dbfinder.retrieve('Testeurs')
+	random.seed()
+	testers = random.sample(tester_list,3)
+	tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
+	bytesize = floor(log2(tester_sum)/8) + 1
+	tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 	
 	update.reinit({
 					'update': 'testers',
-					'newvalue': test_code,
+					'newvalue': tester_sum,
 					'id_field': {'name': 'img_url', 'values': [response['img']]},
 					'other_field': {'name': 'search_version', 'value': response['search_version']}
 				  })
@@ -104,10 +116,6 @@ def get_results():
 décrémentation de la champ 'testers' des documents qui viennent d'être testés
 de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
 testeur dans la collection 'Testeurs'.
-Le champ 'testers' est de type BSON BinData: une chaîne en base 64 représentant
-un champ de bits de taille quelconque, ce qui permet de stocker des valeurs
-supérieures à 2^63-1.
-Le module pymongo convertit automatiquement un objet de type bytes en BinData.
 """
 @mdb.route('/send_results',methods=['POST'])
 def send_results():

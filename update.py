@@ -53,7 +53,8 @@ updater = mongo.MongoUpd({
 					'id_field': {
 									'name': 'img_url',
 									'values': [
-										'https://farm6.staticflickr.com/5694/22094095775_025473a5de_b.jpg'
+										'https://farm6.staticflickr.com/5694/22094095775_025473a5de_b.jpg',
+										'https://i.redd.it/q815f4j0r7n41.jpg'
 											]
 								},
 					'other_field': {
