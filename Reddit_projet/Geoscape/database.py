@@ -46,30 +46,37 @@ Le module pymongo convertit automatiquement un objet de type bytes en BinData.
 @mdb.route('/report',methods=['POST'])
 def report():
 	response = json.loads(request.data.decode('utf-8'))
-	update = mongo.MongoUpd({
-								'update': 'test_result',
-								'newvalue': 'NOT_OK',
-								'id_field': {'name': 'img_url', 'values': [response['img']]},
-								'other_field': {'name': 'search_version',
-								                'value': response['search_version']}
-							})
-	update.updatedb('Resultats_RGN','$set')
 
-	dbfinder = mongo.MongoLoad(proj={'code': 1, '_id': 0})
-	tester_list = dbfinder.retrieve('Testeurs')
-	random.seed()
-	testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste
-	tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
-	bytesize = floor(log2(tester_sum)/8) + 1
-	tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
-	
-	update.reinit({
-					'update': 'testers',
-					'newvalue': tester_sum,
-					'id_field': {'name': 'img_url', 'values': [response['img']]},
-					'other_field': {'name': 'search_version', 'value': response['search_version']}
-				  })
-	update.updatedb('Resultats_RGN','$set')
+	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
+								'img_url': response['img'], 'test_result': 'NOT_OK'},
+							   {'img_url': 1, '_id': 0})
+	already_reported = dbfinder.retrieve('Resultats_RGN')
+
+	if not already_reported:
+		update = mongo.MongoUpd({
+									'update': 'test_result',
+									'newvalue': 'NOT_OK',
+									'id_field': {'name': 'img_url', 'values': [response['img']]},
+									'other_field': {'name': 'search_version',
+									                'value': response['search_version']}
+								})
+		update.updatedb('Resultats_RGN','$set')
+
+		dbfinder = mongo.reinit(proj={'code': 1, '_id': 0})
+		tester_list = dbfinder.retrieve('Testeurs')
+		random.seed()
+		testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste
+		tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
+		bytesize = floor(log2(tester_sum)/8) + 1
+		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
+		
+		update.reinit({
+						'update': 'testers',
+						'newvalue': tester_sum,
+						'id_field': {'name': 'img_url', 'values': [response['img']]},
+						'other_field': {'name': 'search_version', 'value': response['search_version']}
+					  })
+		update.updatedb('Resultats_RGN','$set')
 
 	return jsonify(status='OK')
 
@@ -81,7 +88,7 @@ def report():
 def get_count():
 	dbcounter = mongo.MongoLoad({'user_id': session['username']},
 								{'code': 1, '_id': 0})
-	test_code = dbcounter.retrieve('Testeurs',limit=1)[0]['code']
+	test_code = dbcounter.retrieve('Testeurs')[0]['code']
 	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
 	
 	return jsonify(nbtest=doc_number,pseudo=session['username'])
@@ -101,7 +108,7 @@ def get_results():
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
+	test_code = dbfinder.retrieve('Testeurs')[0]['code']
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
@@ -146,7 +153,7 @@ def send_results():
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve('Testeurs',limit=1)[0]['code']
+	test_code = dbfinder.retrieve('Testeurs')[0]['code']
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
 					{'testers': 1, '_id': 0})

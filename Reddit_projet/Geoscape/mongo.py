@@ -24,16 +24,22 @@ class Mongo:
 	"""
 	@classmethod
 	def indexcheck(cls,coll_tocheck,index):
+		if not index:
+			return False
 		coll = client[coll_tocheck]
-		index_list = []
 		for idx in coll.list_indexes():
-			index_list.append(idx.to_dict()) #Conversion SON->dictionnaire
-		for idx in index_list:
-			arg_compare = sum(1 for name, val in idx['key'].items() if name in index)
+			idx = idx.to_dict()	#SON->dictionnaire
+			arg_compare = sum(1 if name in index else -1
+							for name, val in idx['key'].items())
 			if arg_compare == len(index):
-				return True
+		 		return True
 		return False
 
+	"""Création d'un index n'imposant pas une contrainte d'unicité.
+	Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera passé
+	à la fonction comme dictionnaire, puis converti en liste de tuples pour le passage à la
+	méthode de pymongo.collections.
+	"""
 	@classmethod
 	def nonunique_index(cls,coll_toindex,**index):
 		coll = client[coll_toindex]
@@ -61,12 +67,10 @@ class Mongo:
 		return coll.count_documents(query)
 
 
+
 """Insertion de documents: création de la collection si elle n'existe pas, et création
-de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
-pas obligatoire.
-Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera passé
-à la fonction comme dictionnaire, puis converti en liste de tuples pour le passage à la
-méthode de pymongo.collections.
+optionnelle d'un index sur les champs passés en paramètre; l'index impose une contrainte
+d'unicité sur ces champs.
 De pymongo: 'An important note about collections (and databases) in MongoDB is that they
 are created lazily (...) Collections and databases are created when the first document is
 inserted into them.'
@@ -82,20 +86,21 @@ class MongoSave(Mongo):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
 		coll = client[coll_tostore]
-		index_list = []
-		for key, value in index.items():
-			if value == 'A':
-				index_list.append((key,pymongo.ASCENDING))
-			else:
-				index_list.append((key,pymongo.DESCENDING))
-		"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
-		will enforce uniqueness on the combination of the index key values.'"""
-		if index_list:
-			index_name = ''
-			for i in index_list:
-				ishort = i[0].split('_')
-				index_name += ishort[0] + '_'
-			coll.create_index(index_list,name=index_name.rstrip('_'),unique=True)
+		if not self.indexcheck(coll_tostore,[key for key, val in index.items()]):
+			index_list = []
+			for key, value in index.items():
+				if value == 'A':
+					index_list.append((key,pymongo.ASCENDING))
+				else:
+					index_list.append((key,pymongo.DESCENDING))
+			"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
+			will enforce uniqueness on the combination of the index key values.'"""
+			if index_list:
+				index_name = ''
+				for i in index_list:
+					ishort = i[0].split('_')
+					index_name += ishort[0] + '_'
+				coll.create_index(index_list,name=index_name.rstrip('_'),unique=True)
 		try:
 			coll.insert_many(self.document,ordered=False)
 		except pymongo.errors.BulkWriteError as error:
@@ -107,6 +112,7 @@ class MongoSave(Mongo):
 					sys.exit('Erreur lors de l\'écriture: '+e['errmsg'])
 		else:
 			pass
+
 
 
 """Mises à jour: syntaxe du dico de chargement:
@@ -131,7 +137,7 @@ class MongoUpd(Mongo):
 
 	"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
 	query so that the query selects the documents in the collection that match all the conditions.'
-	Paramètre operator: '$set', '$unset', '$inc' fonctionnent
+	Paramètre operator: '$set', '$unset', '$inc' fonctionnent.
 	"""
 	def updatedb(self,coll_toupd,operator):
 		coll = client[coll_toupd]
