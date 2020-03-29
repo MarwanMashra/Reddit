@@ -58,7 +58,7 @@ def report():
 	dbfinder = mongo.MongoLoad(proj={'code': 1, '_id': 0})
 	tester_list = dbfinder.retrieve('Testeurs')
 	random.seed()
-	testers = random.sample(tester_list,3)
+	testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste
 	tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
 	bytesize = floor(log2(tester_sum)/8) + 1
 	tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
@@ -109,7 +109,7 @@ def get_results():
 					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
 
-	return jsonify({'results': doc_list})
+	return jsonify(results=doc_list)
 
 
 """Réception des résultats du test-expert et stockage dans la base de données;
@@ -125,7 +125,7 @@ def send_results():
 	version = response['search_version']
 	test_results = response['results']
 	url_list = response['img_url']
-	doc_results = list(zip(url_list,test_results))
+	doc_results = zip(url_list,test_results)
 
 	new_document = {}
 	for url, test_item in doc_results:
@@ -140,11 +140,8 @@ def send_results():
 	documents = mongo.MongoSave([new_document])
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 
-	update = mongo.MongoUpd({
-								'update': 'num_answers',
-								'newvalue': 1,
-								'id_field': {'name': 'user_id', 'values': [tester]}
-							})
+	update = mongo.MongoUpd({'update': 'num_answers', 'newvalue': 1,
+							 'id_field': {'name': 'user_id', 'values': [tester]}})
 	update.updatedb('Testeurs','$inc')
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},

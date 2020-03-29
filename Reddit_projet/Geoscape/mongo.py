@@ -15,39 +15,42 @@ class Mongo:
 	"""
 	@classmethod
 	def mongocheck(cls,coll_exists):
-		if coll_exists in client.list_collection_names():
-			return True
-		else:
-			return False
+		return coll_exists in client.list_collection_names()
 
-	"""Vérifie l'existence d'un index et renvoie son nom. Les champs
-	indexés à rechercher sont passés dans un tuple.
-	Retour de index_information(): dictionnaire de dictionnaires:
-	{
-		<nom index>: { 'key': [(<champ indexé>, <0 ou 1>),...],
-						<autres informations>
-					 }
-		<nom index>: ...
-	}
+	"""Vérifie l'existence d'un index. Renvoie vrai s'il existe, faux sinon. L'index
+	en paramètre doit être une liste de champs à indexer.
+	Retour de list_indexes(): itérateur sur des documents au format SON (dictionnaire
+	ordonné). Convertir en dico Python avant utilisation.
 	"""
 	@classmethod
-	def indexcheck(cls,coll_tocheck,*index):
+	def indexcheck(cls,coll_tocheck,index):
 		coll = client[coll_tocheck]
-		indexes = coll.index_information()
-		field_list = []
-		this_index = ''
-		for key in indexes:
-			for field in index:
-				for i_field, order in indexes[key]['key']:
-					if field == i_field:
-						field_list.append(field)
-						break
-			if len(field_list) == len(index):
-				this_index = key
-				break
+		index_list = []
+		for idx in coll.list_indexes():
+			index_list.append(idx.to_dict()) #Conversion SON->dictionnaire
+		for idx in index_list:
+			arg_compare = sum(1 for name, val in idx['key'].items() if name in index)
+			if arg_compare == len(index):
+				return True
+		return False
+
+	@classmethod
+	def nonunique_index(cls,coll_toindex,**index):
+		coll = client[coll_toindex]
+		if cls.indexcheck(coll_toindex,[key for key, val in index.items()]):
+			return
+		index_list = []
+		for key, value in index.items():
+			if value == 'A':
+				index_list.append((key,pymongo.ASCENDING))
 			else:
-				field_list = []
-		return this_index
+				index_list.append((key,pymongo.DESCENDING))
+		if index_list:
+			index_name = ''
+			for i in index_list:
+				ishort = i[0].split('_')
+				index_name += ishort[0] + '_'
+			coll.create_index(index_list,name=index_name.rstrip('_'))
 
 	"""Compte et renvoit le nombre de documents dans une collection.
 	'query' est une requête pour filtrer les documents devant être comptés.
@@ -61,8 +64,9 @@ class Mongo:
 """Insertion de documents: création de la collection si elle n'existe pas, et création
 de l'index à partir des arguments nommés passé à la méthode d'insertion. L'index n'est
 pas obligatoire.
-Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera transformé
-en liste de tuples pour le passage à la méthode de pymongo.collections.
+Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera passé
+à la fonction comme dictionnaire, puis converti en liste de tuples pour le passage à la
+méthode de pymongo.collections.
 De pymongo: 'An important note about collections (and databases) in MongoDB is that they
 are created lazily (...) Collections and databases are created when the first document is
 inserted into them.'
@@ -79,7 +83,7 @@ class MongoSave(Mongo):
 			return
 		coll = client[coll_tostore]
 		index_list = []
-		for key,value in index.items():
+		for key, value in index.items():
 			if value == 'A':
 				index_list.append((key,pymongo.ASCENDING))
 			else:

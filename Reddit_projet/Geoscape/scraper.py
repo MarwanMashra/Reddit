@@ -11,18 +11,6 @@ rgn = Blueprint('rgn',__name__)
 
 
 
-"""Récupère les documents déjà stockés dans la base de données, pour un pays et une version
-du scraper.
-"""
-def mongo_query(country, version):
-	dbfinder = mongo.MongoLoad({'search_version': version, 'country': country},
-							   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1, 'lat': 1, '_id': 0})
-	documents = dbfinder.retrieve('Resultats_RGN',limit=20)
-
-	return documents
-
-
-
 """Stockage dans un dictionnaire des informations sur le résultat geonames."""
 def dicload(res_dic, store_dic, opt_loc=None):
 	store_dic['name'] = res_dic['name']
@@ -121,8 +109,21 @@ def scraping():
 		scrape_requested = True
 
 	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
-	if not scrape_requested:
-		stored_docs = mongo_query(country,rgnversion)
+	stored_docs = []
+	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
+
+	if not scrape_requested and check_db:
+		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},
+							   	   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1,
+							   	    'lat': 1, '_id': 0})
+		stored_docs = dbfinder.retrieve('Resultats_RGN',limit=20)
+
+	#Initialisation de la collection des résultats sur la base de données si elle n'existe pas
+	if not check_db:
+		dbstart = mongo.MongoSave([{'key': 'Initialisation de la collection Resultats_RGN.',
+									'count': 0}])
+		dbstart.storeindb('Resultats_RGN',img_url='A',search_version='D')
+		dbstart.nonunique_index('Resultats_RGN',country='A',search_version='D')
 
 	#Dico de résultats pour l'affichage sur le site
 	search_res = requests.get('http://api.geonames.org/searchJSON?q='+country+'&username=scrapelord',
@@ -278,7 +279,7 @@ def scraping():
 
 		#Chargement dans la base de données des documents générés par le scrape
 		documents = mongo.MongoSave(database_list)
-		documents.storeindb('Resultats_RGN',img_url='A',search_version='D')
+		documents.storeindb('Resultats_RGN')
 
 	return jsonify(dic_results)
 
