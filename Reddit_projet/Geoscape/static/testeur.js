@@ -170,6 +170,9 @@ $(document).ready(function(){
 			if(tag_mot[1]=="PUN" || tag_mot[1]=="SENT"){      //si le mot est une poncutation 
 				checkbox+= tag_mot[0];
 			}
+			else if(tag_mot[1]=="CTY"){
+				checkbox+= ' '+tag_mot[0];
+			}
 			else{               //créer un checkbox pour le mot
 				checkbox+= '<label for="checkbox'+i+'" class="label">  '+tag_mot[0]+'</label>'
 				checkbox+= '<input type="checkbox" name="checkbox'+i+'" id="checkbox'+i+'" class="checkbox" value="'+tag_mot[0]+'">'
