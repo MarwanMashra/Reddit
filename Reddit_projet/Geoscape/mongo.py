@@ -30,7 +30,7 @@ class Mongo:
 		for idx in coll.list_indexes():
 			idx = idx.to_dict()	#SON->dictionnaire
 			arg_compare = sum(1 if name in index else -1
-							for name, val in idx['key'].items())
+							for name in idx['key'].keys())
 			if arg_compare == len(index):
 		 		return True
 		return False
@@ -43,7 +43,7 @@ class Mongo:
 	@classmethod
 	def nonunique_index(cls,coll_toindex,**index):
 		coll = client[coll_toindex]
-		if cls.indexcheck(coll_toindex,[key for key, val in index.items()]):
+		if cls.indexcheck(coll_toindex,[key for key in index.keys()]):
 			return
 		index_list = []
 		for key, value in index.items():
@@ -52,11 +52,8 @@ class Mongo:
 			else:
 				index_list.append((key,pymongo.DESCENDING))
 		if index_list:
-			index_name = ''
-			for i in index_list:
-				ishort = i[0].split('_')
-				index_name += ishort[0] + '_'
-			coll.create_index(index_list,name=index_name.rstrip('_'))
+			index_name = '_'.join(i[0].split('_')[0] for i in index_list)
+			coll.create_index(index_list,name=index_name)
 
 	"""Compte et renvoit le nombre de documents dans une collection.
 	'query' est une requête pour filtrer les documents devant être comptés.
@@ -69,11 +66,12 @@ class Mongo:
 
 
 """Insertion de documents: création de la collection si elle n'existe pas, et création
-optionnelle d'un index sur les champs passés en paramètre; l'index impose une contrainte
+optionnelle d'un index sur les champs passés en paramètre. Syntaxe pour l'index en
+paramètre: <nom champ du document>=<'A' ou 'D'>,... L'index impose une contrainte
 d'unicité sur ces champs.
-De pymongo: 'An important note about collections (and databases) in MongoDB is that they
-are created lazily (...) Collections and databases are created when the first document is
-inserted into them.'
+De pymongo: 'An important note about collections (and databases) in MongoDB is that
+they are created lazily (...) Collections and databases are created when the first
+document is inserted into them.'
 """
 class MongoSave(Mongo):
 	def __init__(self,dblist):
@@ -86,7 +84,7 @@ class MongoSave(Mongo):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
 		coll = client[coll_tostore]
-		if not self.indexcheck(coll_tostore,[key for key, val in index.items()]):
+		if not self.indexcheck(coll_tostore,[key for key in index.keys()]):
 			index_list = []
 			for key, value in index.items():
 				if value == 'A':
@@ -96,11 +94,8 @@ class MongoSave(Mongo):
 			"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
 			will enforce uniqueness on the combination of the index key values.'"""
 			if index_list:
-				index_name = ''
-				for i in index_list:
-					ishort = i[0].split('_')
-					index_name += ishort[0] + '_'
-				coll.create_index(index_list,name=index_name.rstrip('_'),unique=True)
+				index_name = '_'.join(i[0].split('_')[0] for i in index_list)
+				coll.create_index(index_list,name=index_name,unique=True)
 		try:
 			coll.insert_many(self.document,ordered=False)
 		except pymongo.errors.BulkWriteError as error:

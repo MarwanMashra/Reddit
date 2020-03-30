@@ -62,7 +62,7 @@ def report():
 								})
 		update.updatedb('Resultats_RGN','$set')
 
-		dbfinder = mongo.reinit(proj={'code': 1, '_id': 0})
+		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = dbfinder.retrieve('Testeurs')
 		random.seed()
 		testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste

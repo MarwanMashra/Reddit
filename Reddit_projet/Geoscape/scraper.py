@@ -173,14 +173,14 @@ def scraping():
 		test_posts = target_sub.search(query,limit=20)
 		for post in test_posts:
 			try:
-				title = post.title
+				 attempt = post.url
 			except praw.exceptions.APIException as e:
 				print(e.message())
 				continue
 
-			if re.search('.*'+country+'[.,/[( ]',title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+			if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
 				#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
-				res = re.search('^(?:\[OC\])?([^[(]+)',title)
+				res = re.search('^(?:\[OC\])?([^[(]+)',post.title)
 				if (res):
 					print(res.group(1))
 
@@ -230,7 +230,7 @@ def scraping():
 					date = time.gmtime(post.created_utc)
 					dic_tmp = {
 								'img': post.url,
-								'text': title,
+								'text': post.title,
 								'search_version': rgnversion,
 								'url': 'https://www.reddit.com'+post.permalink,
 								'date': {
@@ -243,7 +243,7 @@ def scraping():
 										},
 								'author': {
 											'name': post.author.name,
-											'icon': post.author.icon_img,
+											#'icon': post.author.icon_img,
 											'profile': 'https://www.reddit.com/user/'
 													   +post.author.name
 										  }
