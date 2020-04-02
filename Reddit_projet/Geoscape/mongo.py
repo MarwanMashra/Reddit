@@ -52,7 +52,7 @@ class Mongo:
 			else:
 				index_list.append((key,pymongo.DESCENDING))
 		if index_list:
-			index_name = '_'.join(i[0].split('_')[0] for i in index_list)
+			index_name = '_'.join([i[0].split('_')[0] for i in index_list])
 			coll.create_index(index_list,name=index_name)
 
 	"""Compte et renvoit le nombre de documents dans une collection.
@@ -94,7 +94,7 @@ class MongoSave(Mongo):
 			"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
 			will enforce uniqueness on the combination of the index key values.'"""
 			if index_list:
-				index_name = '_'.join(i[0].split('_')[0] for i in index_list)
+				index_name = '_'.join([i[0].split('_')[0] for i in index_list])
 				coll.create_index(index_list,name=index_name,unique=True)
 		try:
 			coll.insert_many(self.document,ordered=False)
@@ -107,56 +107,6 @@ class MongoSave(Mongo):
 					sys.exit('Erreur lors de l\'écriture: '+e['errmsg'])
 		else:
 			pass
-
-
-
-"""Mises à jour: syntaxe du dico de chargement:
-{
-	update: <champ à mettre à jour>
-	newvalue: <nouvelle valeur> OU [<nouvelle valeur>,...] #liste de même taille que la liste id_field['values']
-	id_field: {
-		name: <nom du champ> #par exemple img_url
-		values: [<valeur du champs>,...]
-	#Optionnel
-	other_field: {
-		name: <nom du champ unique> #par exemple search_version
-		value: <valeur du champ unique>
-}
-"""
-class MongoUpd(Mongo):
-	def __init__(self,dic):
-		self.filter = dic
-
-	def reinit(self,dic):
-		self.filter = dic
-
-	"""De mongoDB manual: 'Implicitly, a logical AND conjunction connects the clauses of a compound
-	query so that the query selects the documents in the collection that match all the conditions.'
-	Paramètre operator: '$set', '$unset', '$inc' fonctionnent.
-	"""
-	def updatedb(self,coll_toupd,operator):
-		coll = client[coll_toupd]
-		if type(self.filter['newvalue']) == list:
-			id_and_val = list(zip(self.filter['id_field']['values'],self.filter['newvalue']))
-			for ident, value in id_and_val:
-				if 'other_field' in self.filter:
-					coll.update_one({
-									  self.filter['id_field']['name']: ident,
-									  self.filter['other_field']['name']: self.filter['other_field']['value']
-									},
-									{operator: {self.filter['update']: value}})
-				else:
-					coll.update_one({self.filter['id_field']['name']: ident},
-									{operator: {self.filter['update']: value}})
-		elif 'other_field' in self.filter:
-			coll.update_many({
-								self.filter['id_field']['name']: {'$in': self.filter['id_field']['values']},
-								self.filter['other_field']['name']: self.filter['other_field']['value']
-							 },
-							 {operator: {self.filter['update']: self.filter['newvalue']}})
-		else:
-			coll.update_many({self.filter['id_field']['name']: {'$in': self.filter['id_field']['values']}},
-							 {operator: {self.filter['update']: self.filter['newvalue']}})
 
 
 
@@ -214,3 +164,51 @@ class MongoLoad(Mongo):
 
 
 
+"""Mises à jour.
+Format paramètres:
+La requête: voir classe précédente.
+La mise à jour, pour un document ou un ensemble de documents:
+{
+	<opérateur>:
+				{
+					<champ>: <nouvelle_valeur>
+					...
+				}
+	...
+}
+"""
+class MongoUpd(Mongo):
+	def __init__(self,query,update,list_id=[],list_val=[]):
+		self.query = query
+		self.update = update
+		self.list_id = list_id
+		self.list_val = list_val
+
+	def reinit(self,query=None,update=None,list_id=[],list_val=[]):
+		if query is not None:
+			self.query = query
+		if update is not None:
+			self.update = update
+		self.list_id = list_id
+		self.list_val = list_val
+
+	"""Mise à jour groupée: plusieurs documents reçoivent la même mise à jour,
+	c'est-à-dire un même champ est mis à jour avec la même valeur pour tous.
+	"""
+	def singleval_upd(self,coll_toupd):
+		coll = client[coll_toupd]
+		coll.update_many(self.query,self.update)
+
+	"""Mise à jour individualisée: pour le même champ, chaque document reçoit
+	une valeur propre. Le paramètre multfield désigne ce champ individualisée.
+	"""
+	def multval_upd(self,coll_toupd,multfield):
+		coll = client[coll_toupd]
+		assert self.list_id and self.list_val,'Listes manquantes pour la fonction de mise à jour.'
+		id_and_val = list(zip(self.list_id,self.list_val))
+		for ident, value in id_and_val:
+			self.query[multfield] = ident
+			for operator in self.update.keys():
+				for key, val in self.update[operator].items():
+					self.update[operator][key] = value
+			coll.update_one(self.query,self.update)

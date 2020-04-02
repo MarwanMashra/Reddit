@@ -53,14 +53,10 @@ def report():
 	already_reported = dbfinder.retrieve('Resultats_RGN')
 
 	if not already_reported:
-		update = mongo.MongoUpd({
-									'update': 'test_result',
-									'newvalue': 'NOT_OK',
-									'id_field': {'name': 'img_url', 'values': [response['img']]},
-									'other_field': {'name': 'search_version',
-									                'value': response['search_version']}
-								})
-		update.updatedb('Resultats_RGN','$set')
+		update = mongo.MongoUpd({'img_url': response['img'],
+								 'search_version': response['search_version']},
+								{'$set': {'test_result': 'NOT_OK'}})
+		update.singleval_upd('Resultats_RGN')
 
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = dbfinder.retrieve('Testeurs')
@@ -70,13 +66,8 @@ def report():
 		bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		
-		update.reinit({
-						'update': 'testers',
-						'newvalue': tester_sum,
-						'id_field': {'name': 'img_url', 'values': [response['img']]},
-						'other_field': {'name': 'search_version', 'value': response['search_version']}
-					  })
-		update.updatedb('Resultats_RGN','$set')
+		update.reinit(update={'$set': {'testers': tester_sum}})
+		update.singleval_upd('Resultats_RGN')
 
 	return jsonify(status='OK')
 
@@ -147,9 +138,8 @@ def send_results():
 	documents = mongo.MongoSave([new_document])
 	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
 
-	update = mongo.MongoUpd({'update': 'num_answers', 'newvalue': 1,
-							 'id_field': {'name': 'user_id', 'values': [tester]}})
-	update.updatedb('Testeurs','$inc')
+	update = mongo.MongoUpd({'user_id': tester},{'$inc': {'num_answers': 1}})
+	update.singleval_upd('Testeurs')
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
@@ -166,12 +156,9 @@ def send_results():
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		sum_list.append(tester_sum)
 
-	update.reinit({
-					'update': 'testers',
-					'newvalue': sum_list,
-					'id_field': {'name': 'img_url', 'values': url_list},
-					'other_field': {'name': 'search_version', 'value': version} 
-				 })
-	update.updatedb('Resultats_RGN','$set')
+	update.reinit({'img_url': '', 'search_version': version},
+				  {'$set': {'testers': ''}},
+				  url_list,sum_list)
+	update.multval_upd('Resultats_RGN','img_url')
 
 	return jsonify(status='OK')
