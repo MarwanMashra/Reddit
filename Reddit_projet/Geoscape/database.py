@@ -3,6 +3,7 @@
 
 import json, random
 import Geoscape.mongo as mongo
+import Geoscape.process as proc
 from flask import Blueprint, jsonify, request, session
 from math import floor, log2
 from functools import reduce
@@ -50,9 +51,8 @@ def report():
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
 								'img_url': response['img'], 'test_result': 'NOT_OK'},
 							   {'img_url': 1, '_id': 0})
-	already_reported = dbfinder.retrieve('Resultats_RGN')
 
-	if not already_reported:
+	if not dbfinder.retrieve('Resultats_RGN'):
 		update = mongo.MongoUpd({'img_url': response['img'],
 								 'search_version': response['search_version']},
 								{'$set': {'test_result': 'NOT_OK'}})
@@ -95,9 +95,8 @@ def get_results():
 	result_value = request.args.get('value')
 	version = request.args.get('version')
 	limit = int(request.args.get('limit'))
-	tester = session['username']
 
-	dbfinder = mongo.MongoLoad({'user_id': tester},
+	dbfinder = mongo.MongoLoad({'user_id': session['username']},
 							   {'code': 1, '_id': 0})
 	test_code = dbfinder.retrieve('Testeurs')[0]['code']
 
@@ -108,6 +107,36 @@ def get_results():
 	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
 
 	return jsonify(results=doc_list)
+
+
+
+"""Prépare le traitement des résultats de tests des documents dont tous les tests
+ont été effectués. Récupère les résultats dans la collection de résultats et les
+valeurs nécessaires dans les documents issus du scraping.
+Lance la fonction de construction d'une liste de résultats par choix majoritaire
+parmi les listes produites par les testeurs.
+"""
+def wrap_proc(version, url_list):
+	dbfinder = mongo.MongoLoad({'img_url': {'$in': url_list}, 'search_version': version},
+							   {'img_url': 1, 'locations_selected': 1, 'sufficient': 1, '_id': 0})
+
+	group_results = {}
+	for doc in dbfinder.retrieve('Resultats_Test_Expert_1'):
+		if doc['img_url'] in group_results:
+			group_results[doc['img_url']].append(doc)
+		else:
+			group_results[doc['img_url']] = [doc]
+
+	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
+					{'search_version': 1, 'country': 1, 'img_url': 1, 'tag_list': 1,
+					 'location_list': 1, '_id': 0})
+
+	for doc in dbfinder.retrieve('Resultats_RGN'):
+		group_results[doc['img_url']].append(doc)
+
+	final_results = proc.select_results(group_results)
+	print(final_results)
+
 
 
 """Réception des résultats du test-expert et stockage dans la base de données;
@@ -123,20 +152,20 @@ def send_results():
 	version = response['search_version']
 	test_results = response['results']
 	url_list = response['img_url']
-	doc_results = zip(url_list,test_results)
 
-	new_document = {}
-	for url, test_item in doc_results:
+	result_docs = []
+	for url, test_item in zip(url_list,test_results):
 		if test_item['lieux_choisis']: #Si la liste est vide, le testeur n'a pas su répondre
-			new_document = {
+			result_docs.append({
 								'tester': tester,
 								'search_version': version,
 								'img_url': url,
 								'locations_selected': test_item['lieux_choisis'],
 								'sufficient': test_item['suffisant']
-						}
-	documents = mongo.MongoSave([new_document])
-	documents.storeindb('Resultats_Test_Expert_1',img_url='A',search_version='D')
+							})
+
+	documents = mongo.MongoSave(result_docs)
+	documents.storeindb('Resultats_Test_Expert_1',tester='A',img_url='A',search_version='D')
 
 	update = mongo.MongoUpd({'user_id': tester},{'$inc': {'num_answers': 1}})
 	update.singleval_upd('Testeurs')
@@ -147,12 +176,17 @@ def send_results():
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
 					{'testers': 1, '_id': 0})
-	all_testers = dbfinder.retrieve('Resultats_RGN')
 	sum_list = []
-	for doc in all_testers:
+	done_list = []
+	for url, doc in zip(url_list,dbfinder.retrieve('Resultats_RGN')):
 		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
 		tester_sum &= (~ (1<<test_code))
-		bytesize = floor(log2(tester_sum)/8) + 1
+
+		if tester_sum == 0:
+			done_list.append(url)
+			bytesize = 1
+		else:
+			bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		sum_list.append(tester_sum)
 
@@ -160,5 +194,8 @@ def send_results():
 				  {'$set': {'testers': ''}},
 				  url_list,sum_list)
 	update.multval_upd('Resultats_RGN','img_url')
+
+	if done_list:
+		wrap_proc(version,done_list)
 
 	return jsonify(status='OK')

@@ -101,12 +101,7 @@ def scraping():
 	rgnversion = request.args.get('search_version')
 	country = request.args.get('country')
 	country_code = request.args.get('country_code')
-	scrape_requested = request.args.get('scraping')
-
-	if scrape_requested == 'false':
-		scrape_requested = False
-	else:
-		scrape_requested = True
+	scrape_requested = True if request.args.get('scraping') == 'true' else False
 
 	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
 	stored_docs = []

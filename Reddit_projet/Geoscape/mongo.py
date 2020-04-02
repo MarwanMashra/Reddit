@@ -200,15 +200,14 @@ class MongoUpd(Mongo):
 		coll.update_many(self.query,self.update)
 
 	"""Mise à jour individualisée: pour le même champ, chaque document reçoit
-	une valeur propre. Le paramètre multfield désigne ce champ individualisée.
+	une valeur propre. Le paramètre multfield désigne ce champ individualisé.
 	"""
 	def multval_upd(self,coll_toupd,multfield):
 		coll = client[coll_toupd]
-		assert self.list_id and self.list_val,'Listes manquantes pour la fonction de mise à jour.'
-		id_and_val = list(zip(self.list_id,self.list_val))
-		for ident, value in id_and_val:
+		assert self.list_id and self.list_val,'Listes manquantes pour la méthode de mise à jour.'
+		for ident, value in zip(self.list_id,self.list_val):
 			self.query[multfield] = ident
 			for operator in self.update.keys():
-				for key, val in self.update[operator].items():
+				for key in self.update[operator].keys():
 					self.update[operator][key] = value
 			coll.update_one(self.query,self.update)
