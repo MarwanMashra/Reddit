@@ -111,7 +111,7 @@ def scraping():
 		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},
 							   	   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1,
 							   	    'lat': 1, '_id': 0})
-		stored_docs = dbfinder.retrieve('Resultats_RGN',limit=20)
+		stored_docs = list(dbfinder.retrieve('Resultats_RGN',limit=20))
 
 	#Initialisation de la collection des résultats sur la base de données si elle n'existe pas
 	if not check_db:

@@ -44,11 +44,13 @@ def connexion():
 		password = request.form['password']
 		
 		#Chercher le compte en supposant que c'est le pseudo
-		compte = mongo.MongoLoad({'pseudo': pseudo_email}).retrieve('users_accounts',limit=1)
+		cmpt = mongo.MongoLoad({'pseudo': pseudo_email})
+		compte = list(cmpt.retrieve('users_accounts',limit=1))
 
 		#Si compte pas trouvé, chercher le compte en supposant que c'est le mail
 		if not compte:
-			compte = mongo.MongoLoad({'email': pseudo_email}).retrieve('users_accounts',limit=1)
+			cmpt.reinit({'email': pseudo_email})
+			compte = list(cmpt.retrieve('users_accounts',limit=1))
 
 		#Si compte trouvé	
 		if compte:

@@ -43,7 +43,7 @@ class Mongo:
 	@classmethod
 	def nonunique_index(cls,coll_toindex,**index):
 		coll = client[coll_toindex]
-		if cls.indexcheck(coll_toindex,[key for key in index.keys()]):
+		if cls.indexcheck(coll_toindex,list(index.keys())):
 			return
 		index_list = []
 		for key, value in index.items():
@@ -84,7 +84,7 @@ class MongoSave(Mongo):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
 		coll = client[coll_tostore]
-		if not self.indexcheck(coll_tostore,[key for key in index.keys()]):
+		if not self.indexcheck(coll_tostore,list(index.keys())):
 			index_list = []
 			for key, value in index.items():
 				if value == 'A':
@@ -150,13 +150,13 @@ class MongoLoad(Mongo):
 	def retrieve(self,coll_tosearch,limit=0):
 		coll = client[coll_tosearch]
 		if not self.projection and limit == 0:
-			return list(coll.find(self.query))
+			return coll.find(self.query)
 		elif not self.projection:
-			return list(coll.find(self.query,limit=limit))
+			return coll.find(self.query,limit=limit)
 		elif limit == 0:
-			return list(coll.find(self.query,self.projection))
+			return coll.find(self.query,self.projection)
 		else:
-			return list(coll.find(self.query,self.projection,limit=limit))
+			return coll.find(self.query,self.projection,limit=limit)
 
 	def dltdocument(self,coll_toupd):
 		coll = client[coll_toupd]

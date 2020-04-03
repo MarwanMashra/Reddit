@@ -1,17 +1,36 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
+import Geoscape.mongo as mongo
 
 
-"""Sélection des résultats de test définitifs à partir des choix des testeurs.
-Results_dic est un dictionnaire dont les clés sont des url qui correspondent aux
-documents scrapés. A chaque clé est associé une liste stockant les dictionnaires
-de résultats correspondant à chaque testeur, et en dernier élément un dictionnaire
-correspondant au document scrapé.
+
+"""Prépare le traitement des résultats de tests des documents dont tous les tests
+ont été effectués. Récupère les résultats dans la collection de résultats et les
+valeurs nécessaires dans les documents issus du scraping.
+Sélection des résultats de test définitifs à partir des choix majoritaires des
+testeurs.
 """
-def select_results(results_dic):
+def select_results(version, url_list):
+	dbfinder = mongo.MongoLoad({'img_url': {'$in': url_list}, 'search_version': version},
+							   {'img_url': 1, 'locations_selected': 1, 'sufficient': 1, '_id': 0})
+
+	group_results = {}
+	for doc in dbfinder.retrieve('Resultats_Test_Expert_1'):
+		if doc['img_url'] in group_results:
+			group_results[doc['img_url']].append(doc)
+		else:
+			group_results[doc['img_url']] = [doc]
+
+	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
+					{'search_version': 1, 'country': 1, 'img_url': 1, 'tag_list': 1,
+					 'location_list': 1, '_id': 0})
+
+	for doc in dbfinder.retrieve('Resultats_RGN'):
+		group_results[doc['img_url']].append(doc)
+
 	final_results = []
-	for key, value in results_dic.items():
+	for key, value in group_results.items():
 		final_doc = {'search_version': value[-1]['search_version'], 'country': value[-1]['country'],
 					 'img_url': key, 'tag_list': value[-1]['tag_list'], 'location_list':
 					 value[-1]['location_list']}
@@ -30,4 +49,5 @@ def select_results(results_dic):
 		final_doc['sufficient'] = True if sum(1 if b else -1 for b in suff_list) > 0 else False
 		final_results.append(final_doc)
 
+	print(final_results)
 	return final_results

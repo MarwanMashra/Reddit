@@ -24,10 +24,9 @@ def get_list_version():
 		version_doc = mongo.MongoSave([{'search_version': '1.00', 'submissions_scraped': 0,
 									   'accuracy': 0}])
 		version_doc.storeindb('Versions_Scrape',search_version='D')
-
-	versions = dbfinder.retrieve('Versions_Scrape')
+ 
 	version_list = []
-	for doc in versions:
+	for doc in dbfinder.retrieve('Versions_Scrape'):
 		version_list.append(doc['search_version'])
 
 	return jsonify(version_list)
@@ -52,14 +51,16 @@ def report():
 								'img_url': response['img'], 'test_result': 'NOT_OK'},
 							   {'img_url': 1, '_id': 0})
 
-	if not dbfinder.retrieve('Resultats_RGN'):
+	try:
+		next(dbfinder.retrieve('Resultats_RGN'))
+	except StopIteration: #L'image n'a pas été signalée auparavant
 		update = mongo.MongoUpd({'img_url': response['img'],
 								 'search_version': response['search_version']},
 								{'$set': {'test_result': 'NOT_OK'}})
 		update.singleval_upd('Resultats_RGN')
 
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
-		tester_list = dbfinder.retrieve('Testeurs')
+		tester_list = list(dbfinder.retrieve('Testeurs'))
 		random.seed()
 		testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste
 		tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
@@ -79,7 +80,7 @@ def report():
 def get_count():
 	dbcounter = mongo.MongoLoad({'user_id': session['username']},
 								{'code': 1, '_id': 0})
-	test_code = dbcounter.retrieve('Testeurs')[0]['code']
+	test_code = next(dbcounter.retrieve('Testeurs'))['code']
 	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
 	
 	return jsonify(nbtest=doc_number,pseudo=session['username'])
@@ -98,44 +99,15 @@ def get_results():
 
 	dbfinder = mongo.MongoLoad({'user_id': session['username']},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve('Testeurs')[0]['code']
+	test_code = next(dbfinder.retrieve('Testeurs'))['code']
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
 					{'search_version': 1, 'img_url': 1, 'tag_list': 1,
 					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
-	doc_list = dbfinder.retrieve('Resultats_RGN',limit=limit)
+	doc_list = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
 
 	return jsonify(results=doc_list)
-
-
-
-"""Prépare le traitement des résultats de tests des documents dont tous les tests
-ont été effectués. Récupère les résultats dans la collection de résultats et les
-valeurs nécessaires dans les documents issus du scraping.
-Lance la fonction de construction d'une liste de résultats par choix majoritaire
-parmi les listes produites par les testeurs.
-"""
-def wrap_proc(version, url_list):
-	dbfinder = mongo.MongoLoad({'img_url': {'$in': url_list}, 'search_version': version},
-							   {'img_url': 1, 'locations_selected': 1, 'sufficient': 1, '_id': 0})
-
-	group_results = {}
-	for doc in dbfinder.retrieve('Resultats_Test_Expert_1'):
-		if doc['img_url'] in group_results:
-			group_results[doc['img_url']].append(doc)
-		else:
-			group_results[doc['img_url']] = [doc]
-
-	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
-					{'search_version': 1, 'country': 1, 'img_url': 1, 'tag_list': 1,
-					 'location_list': 1, '_id': 0})
-
-	for doc in dbfinder.retrieve('Resultats_RGN'):
-		group_results[doc['img_url']].append(doc)
-
-	final_results = proc.select_results(group_results)
-	print(final_results)
 
 
 
@@ -172,19 +144,20 @@ def send_results():
 
 	dbfinder = mongo.MongoLoad({'user_id': tester},
 							   {'code': 1, '_id': 0})
-	test_code = dbfinder.retrieve('Testeurs')[0]['code']
+	test_code = next(dbfinder.retrieve('Testeurs'))['code']
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},
 					{'testers': 1, '_id': 0})
 	sum_list = []
 	done_list = []
-	for url, doc in zip(url_list,dbfinder.retrieve('Resultats_RGN')):
+	doc_list = list(dbfinder.retrieve('Resultats_RGN'))
+	for url, doc in zip(url_list,doc_list):
 		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
 		tester_sum &= (~ (1<<test_code))
 
 		if tester_sum == 0:
 			done_list.append(url)
-			bytesize = 1
+			bytesize = 1 #log(0) non défini
 		else:
 			bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
@@ -196,6 +169,6 @@ def send_results():
 	update.multval_upd('Resultats_RGN','img_url')
 
 	if done_list:
-		wrap_proc(version,done_list)
+		final_list = proc.select_results(version,done_list)
 
 	return jsonify(status='OK')
