@@ -189,7 +189,7 @@ def scraping():
 					indexes = []
 					if size > 1:
 						name_tags = [t[0].casefold() for t in reddit_tags]
-						for window in enumerate(list(windowed(name_tags,size))):
+						for window in enumerate((windowed(name_tags,size))):
 							if all(window[1][i] == country_split[i] for i in range(size)):
 								indexes.extend([i for i in range(window[0],window[0]+size)])
 
@@ -202,10 +202,9 @@ def scraping():
 
 					#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
 					location_list = [
-										' '.join([t[0] for t in g]) if k
-										else len(list(g))
-										for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
-									]
+								' '.join([t[0] for t in g]) if k else len(list(g))
+								for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
+							]
 
 					print('Lieux trouvés:',end='')
 					print(location_list,'\n')

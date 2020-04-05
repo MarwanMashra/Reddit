@@ -91,8 +91,8 @@ def inscription():
 		password_confirmation = request.form['password_confirmation']
 		is_admin = ('admin' in request.form)
 
-		existing_name = mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1)
-		existing_mail = mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1)
+		existing_name = list(mongo.MongoLoad({'pseudo': pseudo}).retrieve('users_accounts',limit=1))
+		existing_mail = list(mongo.MongoLoad({'email': email}).retrieve('users_accounts',limit=1))
 
 		if existing_name:
 			error = 'Ce pseudo est déjà utilisé, veuillez en choisir un autre.'

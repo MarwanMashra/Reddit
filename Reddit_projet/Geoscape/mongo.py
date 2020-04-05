@@ -24,8 +24,6 @@ class Mongo:
 	"""
 	@classmethod
 	def indexcheck(cls,coll_tocheck,index):
-		if not index:
-			return False
 		coll = client[coll_tocheck]
 		for idx in coll.list_indexes():
 			idx = idx.to_dict()	#SON->dictionnaire
@@ -43,7 +41,7 @@ class Mongo:
 	@classmethod
 	def nonunique_index(cls,coll_toindex,**index):
 		coll = client[coll_toindex]
-		if cls.indexcheck(coll_toindex,list(index.keys())):
+		if len(index) > 0 and cls.indexcheck(coll_toindex,list(index.keys())):
 			return
 		index_list = []
 		for key, value in index.items():
@@ -160,7 +158,7 @@ class MongoLoad(Mongo):
 
 	def dltdocument(self,coll_toupd):
 		coll = client[coll_toupd]
-		coll.find_one_and_delete(self.query,projection={'_id': 0})
+		return coll.delete_many(self.query).deleted_count
 
 
 

@@ -6,7 +6,6 @@ import Geoscape.mongo as mongo
 import Geoscape.process as proc
 from flask import Blueprint, jsonify, request, session
 from math import floor, log2
-from functools import reduce
 
 mdb = Blueprint('mdb',__name__)
 
@@ -62,9 +61,8 @@ def report():
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = list(dbfinder.retrieve('Testeurs'))
 		random.seed()
-		testers = random.sample(tester_list,3) #Sélection aléatoire dans la liste
-		tester_sum = reduce(lambda x,y: x + 2**y['code'],testers,0)
-		bytesize = floor(log2(tester_sum)/8) + 1
+		tester_sum = sum(2**t['code'] for t in random.sample(tester_list,3)) #Sélection aléatoire dans la liste
+		bytesize = floor(log2(tester_sum)/8 if tester_sum else 0) + 1 #log2(0) non défini
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		
 		update.reinit(update={'$set': {'testers': tester_sum}})
@@ -150,14 +148,13 @@ def send_results():
 					{'testers': 1, '_id': 0})
 	sum_list = []
 	done_list = []
-	doc_list = list(dbfinder.retrieve('Resultats_RGN'))
-	for url, doc in zip(url_list,doc_list):
+	for url, doc in zip(url_list,dbfinder.retrieve('Resultats_RGN')):
 		tester_sum = int.from_bytes(doc['testers'],byteorder='big') #classmethod, appelée sans instance
 		tester_sum &= (~ (1<<test_code))
 
 		if tester_sum == 0:
 			done_list.append(url)
-			bytesize = 1 #log(0) non défini
+			bytesize = 1
 		else:
 			bytesize = floor(log2(tester_sum)/8) + 1
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
@@ -170,5 +167,7 @@ def send_results():
 
 	if done_list:
 		final_list = proc.select_results(version,done_list)
+		documents.reinit(final_list)
+		documents.storeindb('Resultats_Final_Expert_1',img_url='A',search_version='D')
 
 	return jsonify(status='OK')
