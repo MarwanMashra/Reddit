@@ -113,6 +113,9 @@ def get_results():
 décrémentation de la champ 'testers' des documents qui viennent d'être testés
 de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
 testeur dans la collection 'Testeurs'.
+Si tous les tests sur un document ont été réalisés, lance la sélection des
+résultats finaux à partir des choix des testeurs, puis stocke ce résultat final
+dans la collection 'Resultats_Final_Expert_1'.
 """
 @mdb.route('/send_results',methods=['POST'])
 def send_results():
@@ -168,6 +171,7 @@ def send_results():
 	if done_list:
 		final_list = proc.select_results(version,done_list)
 		documents.reinit(final_list)
+		documents.nonunique_index('Resultats_Final_Expert_1',country='A',search_version='D')
 		documents.storeindb('Resultats_Final_Expert_1',img_url='A',search_version='D')
 
 	return jsonify(status='OK')

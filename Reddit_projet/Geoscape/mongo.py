@@ -43,14 +43,10 @@ class Mongo:
 		coll = client[coll_toindex]
 		if len(index) > 0 and cls.indexcheck(coll_toindex,list(index.keys())):
 			return
-		index_list = []
-		for key, value in index.items():
-			if value == 'A':
-				index_list.append((key,pymongo.ASCENDING))
-			else:
-				index_list.append((key,pymongo.DESCENDING))
+		index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
+					  for key, val in index.items()]
 		if index_list:
-			index_name = '_'.join([i[0].split('_')[0] for i in index_list])
+			index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 			coll.create_index(index_list,name=index_name)
 
 	"""Compte et renvoit le nombre de documents dans une collection.
@@ -83,16 +79,12 @@ class MongoSave(Mongo):
 			return
 		coll = client[coll_tostore]
 		if not self.indexcheck(coll_tostore,list(index.keys())):
-			index_list = []
-			for key, value in index.items():
-				if value == 'A':
-					index_list.append((key,pymongo.ASCENDING))
-				else:
-					index_list.append((key,pymongo.DESCENDING))
+			index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
+						 for key, val in index.items()]
 			"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
 			will enforce uniqueness on the combination of the index key values.'"""
 			if index_list:
-				index_name = '_'.join([i[0].split('_')[0] for i in index_list])
+				index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 				coll.create_index(index_list,name=index_name,unique=True)
 		try:
 			coll.insert_many(self.document,ordered=False)

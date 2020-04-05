@@ -3,6 +3,7 @@
 
 import copy, json, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
 import Geoscape.mongo as mongo
+import Geoscape.process as proc
 from flask import Blueprint, jsonify, request
 from itertools import groupby
 from more_itertools import windowed
@@ -103,6 +104,9 @@ def scraping():
 	country_code = request.args.get('country_code')
 	scrape_requested = True if request.args.get('scraping') == 'true' else False
 
+	#TEST Création de nouvelles règles de scrape à partir de résultats non traités
+	proc.create_rule(rgnversion,country)
+
 	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
 	stored_docs = []
 	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
@@ -189,7 +193,7 @@ def scraping():
 					indexes = []
 					if size > 1:
 						name_tags = [t[0].casefold() for t in reddit_tags]
-						for window in enumerate((windowed(name_tags,size))):
+						for window in enumerate(windowed(name_tags,size)):
 							if all(window[1][i] == country_split[i] for i in range(size)):
 								indexes.extend([i for i in range(window[0],window[0]+size)])
 
