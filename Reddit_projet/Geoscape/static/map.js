@@ -47,7 +47,8 @@ $(document).ready(function(){
 					country:pays[0],
 					country_code:pays[1],
 					search_version: $("#search_version").val(),
-					scraping: $("input[id='scraping_input']").is(':checked')
+					scraping: $("input[id='scraping_input']").is(':checked'),
+					nombre_image: parseInt($("#nombre_image").val())
 				},
 				beforeSend:startAnimation ,
 				success: createMap        //appeler la fonction pour créer la carte si la requête a réussi
