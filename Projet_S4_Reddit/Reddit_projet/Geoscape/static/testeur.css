@@ -1,0 +1,12 @@
+h2{
+	color: red;
+}
+.label{
+	cursor: pointer;
+}
+.checkbox{
+	display: none;
+}
+#goToMap{
+	display: none;
+}
