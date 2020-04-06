@@ -25,7 +25,7 @@ $(document).ready(function(){
 		url:"/get_list_version",
 		success: createVersionSelector,
 		error:  ()=>{var search_version=["1.00"];createVersionSelector(search_version);}
-	});          
+	});
 	
 	
 

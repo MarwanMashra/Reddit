@@ -102,10 +102,8 @@ def scraping():
 	rgnversion = request.args.get('search_version')
 	country = request.args.get('country')
 	country_code = request.args.get('country_code')
+	limit = int(request.args.get('nombre_image'))
 	scrape_requested = True if request.args.get('scraping') == 'true' else False
-
-	#TEST Création de nouvelles règles de scrape à partir de résultats non traités
-	proc.create_rule(rgnversion,country)
 
 	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
 	stored_docs = []
@@ -115,7 +113,7 @@ def scraping():
 		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},
 							   	   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1,
 							   	    'lat': 1, '_id': 0})
-		stored_docs = list(dbfinder.retrieve('Resultats_RGN',limit=20))
+		stored_docs = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
 
 	#Initialisation de la collection des résultats sur la base de données si elle n'existe pas
 	if not check_db:
@@ -129,31 +127,19 @@ def scraping():
 				 auth=('scrapelord','Blorp86'))
 	search_res = search_res.json()
 	
-	dic_results = {
-					'head': {
-								'total': 0,
-								'country': {
-											'name': country,
-											'lng': search_res['geonames'][0]['lng'],
-											'lat': search_res['geonames'][0]['lat'] 
-										   }
-							},
-					'results': []
-				  }
+	dic_results = {'head': {'total': 0,
+							'country': {'name': country, 'lng': search_res['geonames'][0]['lng'],
+										'lat': search_res['geonames'][0]['lat']}},
+				   'results': []}
 	#Liste de chargement pour la base de données
 	database_list = []
 
 	if not scrape_requested and stored_docs:
 		for doc in stored_docs:
 			dic_results['head']['total'] += 1
-			dic_results['results'].append({
-											'img': doc['img_url'],
-											'text': doc['title'],
-											'search_version': rgnversion,
-											'name': doc['name'],
-											'lng': doc['lng'],
-											'lat': doc['lat']
-										})
+			dic_results['results'].append({'img': doc['img_url'], 'text': doc['title'],
+										   'search_version': rgnversion, 'name': doc['name'],
+										   'lng': doc['lng'], 'lat': doc['lat']})
 
 	else:
 		#Configuration recherche reddit
@@ -169,7 +155,7 @@ def scraping():
 		reddit_tagger = treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
 		#Résultats de la recherche dans le subreddit
-		test_posts = target_sub.search(query,limit=20)
+		test_posts = target_sub.search(query,limit=limit)
 		for post in test_posts:
 			try:
 				 attempt = post.url
@@ -214,38 +200,21 @@ def scraping():
 					print(location_list,'\n')
 
 					#Geonames
-					dic_mongo = {
-									'link': post.permalink,
-									'img_url': post.url, #Lien direct vers la photo
-									'search_version': rgnversion,
-									'country': country,
-									'title': res.group(1).strip(),
-									'tag_list': reddit_tags,
-									'location_list': location_list
-								}
+					dic_mongo = {'link': post.permalink, 'img_url': post.url, #Lien direct vers la photo
+								 'search_version': rgnversion, 'country': country,
+								 'title': res.group(1).strip(), 'tag_list': reddit_tags,
+								 'location_list': location_list}
 
 					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
 					date = time.gmtime(post.created_utc)
-					dic_tmp = {
-								'img': post.url,
-								'text': post.title,
-								'search_version': rgnversion,
-								'url': 'https://www.reddit.com'+post.permalink,
-								'date': {
-											'year': date.tm_year,
-											'month': date.tm_mon,
-											'day': date.tm_mday,
-											'hour': date.tm_hour,
-											'min': date.tm_min,
-											'sec': date.tm_sec
-										},
-								'author': {
-											'name': post.author.name,
-											#'icon': post.author.icon_img,
-											'profile': 'https://www.reddit.com/user/'
-													   +post.author.name
-										  }
-							  }
+					dic_tmp = {'img': post.url, 'text': post.title, 'search_version': rgnversion,
+							   'url': 'https://www.reddit.com'+post.permalink,
+							   'date': {'year': date.tm_year, 'month': date.tm_mon,
+										'day': date.tm_mday, 'hour': date.tm_hour,
+										'min': date.tm_min, 'sec': date.tm_sec},
+								'author': {'name': post.author.name,
+										  #'icon': post.author.icon_img,
+										   'profile': 'https://www.reddit.com/user/'+post.author.name}}
 
 					"""Recherche de match exact pour tous les lieux de la liste.
 					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
@@ -280,4 +249,3 @@ def scraping():
 		documents.storeindb('Resultats_RGN')
 
 	return jsonify(dic_results)
-

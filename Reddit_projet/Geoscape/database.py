@@ -12,8 +12,10 @@ mdb = Blueprint('mdb',__name__)
 
 
 """Crée la collection de stockage des versions du scraper si elle n'existe pas.
-Récupère ensuite toutes les versions et envoie la liste résultat à la page de
-lancement du scrape.
+Récupère les résultats de tests finaux et les traite pour générer de nouvelles
+règles. Une nouvelle version du scraper est alors créée pour utiliser ces règles. 
+Toutes les versions sont envoyées à la page de lancement du scrape pour pouvoir
+être sélectionnées.
 """
 @mdb.route('/get_list_version',methods=['GET'])
 def get_list_version():
@@ -23,6 +25,8 @@ def get_list_version():
 		version_doc = mongo.MongoSave([{'search_version': '1.00', 'submissions_scraped': 0,
 									   'accuracy': 0}])
 		version_doc.storeindb('Versions_Scrape',search_version='D')
+
+	proc.create_rule()
  
 	version_list = []
 	for doc in dbfinder.retrieve('Versions_Scrape'):
@@ -129,13 +133,9 @@ def send_results():
 	result_docs = []
 	for url, test_item in zip(url_list,test_results):
 		if test_item['lieux_choisis']: #Si la liste est vide, le testeur n'a pas su répondre
-			result_docs.append({
-								'tester': tester,
-								'search_version': version,
-								'img_url': url,
+			result_docs.append({'tester': tester, 'search_version': version, 'img_url': url,
 								'locations_selected': test_item['lieux_choisis'],
-								'sufficient': test_item['suffisant']
-							})
+								'sufficient': test_item['suffisant']})
 
 	documents = mongo.MongoSave(result_docs)
 	documents.storeindb('Resultats_Test_Expert_1',tester='A',img_url='A',search_version='D')

@@ -6,6 +6,15 @@ from Geoscape.db_init import client
 
 
 
+"""Extrait de mongoDB manual:
+'For a compound multikey index, each indexed document can have at most one indexed
+field whose value is an array.'
+'If you use the unique constraint on a compound index, then MongoDB will enforce
+uniqueness on the combination of the index key values.'
+"""
+
+
+
 """Classe de base dont héritent les autres. Permet d'obtenir des informations sur la
 base de données, mais pas d'opérer dessus. La connexion elle-même se fait dans le
 fichier db_init.py.
@@ -81,8 +90,6 @@ class MongoSave(Mongo):
 		if not self.indexcheck(coll_tostore,list(index.keys())):
 			index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
 						 for key, val in index.items()]
-			"""De mongoDB manual: 'If you use the unique constraint on a compound index, then MongoDB
-			will enforce uniqueness on the combination of the index key values.'"""
 			if index_list:
 				index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 				coll.create_index(index_list,name=index_name,unique=True)

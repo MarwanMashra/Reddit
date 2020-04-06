@@ -27,12 +27,11 @@ def select_results(version, url_list):
 	final_results = []
 	for doc in dbfinder.retrieve('Resultats_RGN'):
 		result = list(group_results[doc['img_url']]) #Conversion de l'itérateur car double parcours nécessaire
-		doc['locations_selected'] = [
-								True if comp.count(True) > len(comp)/2 else False
-								for comp in zip(*[res['locations_selected'] for res in result])
-							]
+		doc['locations_selected'] = [True if comp.count(True) > len(comp)/2 else False
+									 for comp in zip(*[res['locations_selected'] for res in result])]
 		doc['sufficient'] = True if sum(1 if b else -1 for b in
 							[res['sufficient'] for res in result]) > 0 else False
+
 		final_results.append(doc)
 
 	return final_results
@@ -42,9 +41,9 @@ def select_results(version, url_list):
 """Réuni les noms propres voisins du lieu choisi erroné dans la liste de résultats.
 """
 def good_neighbors(bad_vector, all_vectors):
-	neighbors = [bad_vector]
 	f_idx = bad_vector[0][0] #Position dans all_vectors
 	l_idx = bad_vector[-1][0]
+	neighbors = [t[1:] for t in bad_vector]
 	final_index = 0
 
 	for vect in takewhile(lambda x: x[0] and x[2] == 'NP0', all_vectors[:f_idx][::-1]):
@@ -65,54 +64,53 @@ d'étiquettes TreeTagger.
 Sont extraites de cette liste de comparaison les sous-listes contenant les erreurs
 détectées et les noms propres voisins.
 """
-def create_rule(version, country):
-	dbfinder = mongo.MongoLoad({'country': country, 'search_version': version},
-							   {'search_version': 0, '_id': 0})
+def create_rule():
+	dbfinder = mongo.MongoLoad(proj={'search_version': 1, '_id': 0})
+	max_version = max(doc['search_version'] for doc in dbfinder.retrieve('Versions_Scrape'))
+	next_version = str(float(max_version) + 0.01)
+
+	dbfinder.reinit(proj={'search_version': 0, '_id': 0})
 
 	rule_list = []
 	for doc in dbfinder.retrieve('Resultats_Final_Expert_1'):
 		words = chain(*(
 					loc.split(' ') if type(loc) == str else [0 for i in range(loc)]
-					for loc in doc['location_list']
-				))
+					for loc in doc['location_list']))
 
 		tags = doc['tag_list']
 		comp_list = list(zip(doc['locations_selected'],words,(t[1] for t in tags),
 					(t[0] for t in tags)))
 
 		bad_results = []
-		for k, g in groupby(enumerate(comp_list),
-							key = lambda x: bool(x[1][0]) != bool(x[1][1])):
+		for k, g in groupby(enumerate(comp_list), key = lambda x: x[1][0] != bool(x[1][1])):
 			if k:
 				bad_results.append(good_neighbors(list(g),comp_list))
-
+		
 		for result in bad_results:
 			index = result['errpos']
 			lvect = len(result['errlist'][index])
-			llist = len(result['errlist'])
 			rule_vect = result['errlist'][index:index+lvect]
 			take = 0
 
-			if llist > 1:
+			if len(result['errlist']) > 1:
 				take = 2
-				if index == llist - 1:
+				if index == len(result['errlist']) - 1:
 					rule_vect = result['errlist'][:index]
 					take = 1
 				elif index == 0:
-					rule_vect = result['errlist'][index+lvect:llist]
+					rule_vect = result['errlist'][index+lvect:]
 					take = -1
 
-			new_rule = {
-							'country': country,
-							'expr': [i[3] for i in rule_vect],
-							'pos': [i[2] for i in rule_vect],
-							'take': take,
-							'search_version': version, 
-							'img_url': doc['img_url']
-						}
-			rule_list.append(new_rule)
-			print(new_rule,'\n')
+			new_rule = {'country': doc['country'], 'expr': ' '.join(i[3] for i in rule_vect),
+						'pos': [i[2] for i in rule_vect], 'take': take,
+						'search_version': next_version, 'img_url': doc['img_url']}
 
+			rule_list.append(new_rule)
+
+	print(rule_list)
 	db = mongo.MongoSave(rule_list)
 	db.nonunique_index('Nouvelles_Regles',country='A',search_version='D')
-	db.storeindb('Nouvelles_Regles',img_url='A',search_version='D')
+	db.storeindb('Nouvelles_Regles',country='A',expr='A',pos='A',take='A')
+
+	db.reinit([{'search_version': next_version, 'submissions_scraped': 0, 'accuracy': 0}])
+	db.storeindb('Versions_Scrape')
