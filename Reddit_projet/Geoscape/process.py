@@ -28,9 +28,11 @@ def select_results(version, url_list):
 	for doc in dbfinder.retrieve('Resultats_RGN'):
 		result = list(group_results[doc['img_url']]) #Conversion de l'itérateur car double parcours nécessaire
 		doc['locations_selected'] = [True if comp.count(True) > len(comp)/2 else False
-									 for comp in zip(*[res['locations_selected'] for res in result])]
+									 for comp in zip(*[res['locations_selected'] for res in result])]									 
+
 		doc['sufficient'] = True if sum(1 if b else -1 for b in
 							[res['sufficient'] for res in result]) > 0 else False
+		doc['processed'] = False
 
 		final_results.append(doc)
 
@@ -69,7 +71,7 @@ def create_rule():
 	max_version = max(doc['search_version'] for doc in dbfinder.retrieve('Versions_Scrape'))
 	next_version = str(float(max_version) + 0.01)
 
-	dbfinder.reinit(proj={'search_version': 0, '_id': 0})
+	dbfinder.reinit({'processed': {'$eq': False}},{'search_version': 0, '_id': 0})
 
 	rule_list = []
 	for doc in dbfinder.retrieve('Resultats_Final_Expert_1'):
@@ -107,10 +109,13 @@ def create_rule():
 
 			rule_list.append(new_rule)
 
-	print(rule_list)
-	db = mongo.MongoSave(rule_list)
-	db.nonunique_index('Nouvelles_Regles',country='A',search_version='D')
-	db.storeindb('Nouvelles_Regles',country='A',expr='A',pos='A',take='A')
+	if rule_list:
+		db = mongo.MongoSave(rule_list)
+		db.nonunique_index('Nouvelles_Regles',country='A',search_version='D')
+		db.storeindb('Nouvelles_Regles',country='A',expr='A',pos='A',take='A')
 
-	db.reinit([{'search_version': next_version, 'submissions_scraped': 0, 'accuracy': 0}])
-	db.storeindb('Versions_Scrape')
+		db.reinit([{'search_version': next_version, 'submissions_scraped': 0, 'accuracy': 0}])
+		db.storeindb('Versions_Scrape')
+
+		upd = mongo.MongoUpd({'processed': {'$eq': False}},{'$set': {'processed': True}})
+		upd.singleval_upd('Resultats_Final_Expert_1')

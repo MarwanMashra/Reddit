@@ -89,6 +89,49 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 
 
 
+def location_finder(country, version, tags):
+	db = mongo.MongoLoad({'country': country, 'search_version': {'$lte': version}},
+						 {'expr': 1, 'pos': 1, 'take': 1, '_id': 0})
+
+	for rule in db.retrieve('Nouvelles_Regles'):
+		expr_len = len(rule['pos'])
+		expr_str = ''
+		expr_tags = []
+
+		for i in range(len(tags)):
+			if i - expr_len + 1 >= 0:
+				expr_str = ' '.join(tags[i][0] for i in range(i-expr_len+1,i+1))
+				expr_tags = [tags[i][1] for i in range(i-expr_len+1,i+1)]
+
+			if expr_str == rule['expr']:
+				if all(expr_tags[i] == rule['pos'][i] for i in range(expr_len)):
+					left = i - expr_len
+
+					if rule['take'] == 0:
+						for j in range(i-expr_len,i+1):
+							if tags[j][1] != 'NP0':
+								tags[j] = (tags[j][0],'TAR',tags[j][2])
+
+					elif rule['take'] == 1:
+						if i+1 < len(tags) and tags[i+1][1] != 'NP0':
+							tags[i+1] = (tags[i+1][0],'TAR',tags[i+1][2])
+
+					elif rule['take'] == -1:
+						if left >= 0 and tags[left][1] != 'NP0':
+							tags[left] = (tags[left][0],'TAR',tags[left][2])
+							
+					else:
+						if i+1 < len(tags) and tags[i+1][1] == 'NP0' \
+						and left >= 0 and tags[left][1] == 'NP0':
+							tags[i] = (tags[i][0],'TAR',tags[i][2])
+
+	loc_list = [' '.join(t[0] for t in g) if k else len(list(g)) for k, g
+				in groupby(tags, key = lambda x: x[1] == 'NP0' or x[1] == 'TAR')]
+
+	return loc_list
+
+
+
 """Configuration et lancement du reddit scrape, puis tagging des titres des soumissions reddit
 résultats par TreeTagger et analyse des tags pour obtenir une liste de lieux potentiels. Ces
 lieux sont recherchés sur geonames. Les résultats de cette dernière recherche sont chargés dans
@@ -191,10 +234,7 @@ def scraping():
 					pprint.pprint(reddit_tags)
 
 					#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
-					location_list = [
-								' '.join([t[0] for t in g]) if k else len(list(g))
-								for k, g in groupby(reddit_tags, key = lambda x: x[1] == 'NP0')
-							]
+					location_list = location_finder(country,rgnversion,reddit_tags)
 
 					print('Lieux trouvés:',end='')
 					print(location_list,'\n')

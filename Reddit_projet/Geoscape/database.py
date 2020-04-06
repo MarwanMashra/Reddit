@@ -14,8 +14,8 @@ mdb = Blueprint('mdb',__name__)
 """Crée la collection de stockage des versions du scraper si elle n'existe pas.
 Récupère les résultats de tests finaux et les traite pour générer de nouvelles
 règles. Une nouvelle version du scraper est alors créée pour utiliser ces règles. 
-Toutes les versions sont envoyées à la page de lancement du scrape pour pouvoir
-être sélectionnées.
+Toutes les versions sont envoyées à la page de lancement du scrape et sont
+proposées à l'utilisateur.
 """
 @mdb.route('/get_list_version',methods=['GET'])
 def get_list_version():
@@ -171,7 +171,7 @@ def send_results():
 	if done_list:
 		final_list = proc.select_results(version,done_list)
 		documents.reinit(final_list)
-		documents.nonunique_index('Resultats_Final_Expert_1',country='A',search_version='D')
+		documents.nonunique_index('Resultats_Final_Expert_1',processed='A')
 		documents.storeindb('Resultats_Final_Expert_1',img_url='A',search_version='D')
 
 	return jsonify(status='OK')
