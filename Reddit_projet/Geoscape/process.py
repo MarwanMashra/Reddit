@@ -42,7 +42,7 @@ def select_results(version, url_list):
 
 """Réuni les noms propres voisins du lieu choisi erroné dans la liste de résultats.
 """
-def good_neighbors(bad_vector, all_vectors):
+def good_neighbors(bad_vector, all_vectors, is_correct):
 	f_idx = bad_vector[0][0] #Position dans all_vectors
 	l_idx = bad_vector[-1][0]
 	neighbors = [t[1] for t in bad_vector]
@@ -55,7 +55,8 @@ def good_neighbors(bad_vector, all_vectors):
 	for vect in takewhile(lambda x: x[0] and x[2] == 'NP0', all_vectors[l_idx+1:]):
 		neighbors.append(vect)
 
-	return {'errpos': final_index, 'errlist': neighbors}
+	return {'errpos': final_index, 'errlen': len(bad_vector), 'errlist': neighbors,
+			'errtype': is_correct}
 
 
 
@@ -84,25 +85,28 @@ def create_rule():
 					(t[0] for t in tags)))
 
 		bad_results = []
+		# 0-enum 1-(0-booléens test lieux 1-lieux potentiels 2-tags 3-mots)
 		for k, g in groupby(enumerate(comp_list), key = lambda x: x[1][0] != bool(x[1][1])):
 			if k:
-				bad_results.append(good_neighbors(list(g),comp_list))
+				for kk, gg in groupby(g, key = lambda x: x[1][0]):
+					vect = list(gg)
+					bad_results.append(good_neighbors(vect,comp_list,vect[0][1][0]))
 		
 		for result in bad_results:
-			print(result)
-			index = result['errpos']
-			lvect = len(result['errlist'][index])
-			rule_vect = result['errlist'][index:index+lvect]
-			take = 0
+			errpos = result['errpos']
+			errlen = result['errlen']
+			rule_vect = result['errlist'][errpos:errpos+errlen]
+			take = 0 if result['errtype'] else 'X'
 
-			if len(result['errlist']) > 1:
-				take = 2
-				if index == len(result['errlist']) - 1:
-					rule_vect = result['errlist'][:index]
-					take = 1
-				elif index == 0:
-					rule_vect = result['errlist'][index+lvect:]
-					take = -1
+			if len(result['errlist']) - errlen > 0:
+				take = 2 if result['errtype'] else 'X'
+
+				if errpos == len(result['errlist']) - 1:
+					rule_vect = result['errlist'][:errpos]
+					take = 1 if result['errtype'] else 'R'
+				elif errpos == 0:
+					rule_vect = result['errlist'][errpos+errlen:]
+					take = -1 if result['errtype'] else 'L'
 
 			new_rule = {'country': doc['country'], 'expr': ' '.join(i[3] for i in rule_vect),
 						'pos': [i[2] for i in rule_vect], 'take': take,

@@ -25,7 +25,7 @@ def dicload(res_dic, store_dic, opt_loc=None):
 
 
 """Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
-la fonction locationsearch. D'abord recherche d'un match exact, en privilégiant les lieux
+la fonction location_finder. D'abord recherche d'un match exact, en privilégiant les lieux
 naturels plutôt qu'humains; sinon choix du premier résultat de recherche.
 Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
 tous les résultats, et dans un dico qui sera enregistré dans la base de données.
@@ -89,6 +89,13 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 
 
 
+"""Recherche des lieux potentiels dans le titre de la soumission Reddit. La recherche de base
+considère que les noms propres voisins forment un lieu. Par-dessus cette recherche, les règles
+générées par l'analyse des résultats des tests utilisateurs fournissent des mots particuliers
+à prendre en compte (dotés de l'étiquette 'TAR') ou à ignorer (l'étiquette 'IGN').
+En plus des lieux potentiels, la liste résultat stocke le nombre de mots non sélectionnés
+séparant les lieux retenus.
+"""
 def location_finder(country, version, tags):
 	db = mongo.MongoLoad({'country': country, 'search_version': {'$lte': version}},
 						 {'expr': 1, 'pos': 1, 'take': 1, '_id': 0})
@@ -112,13 +119,25 @@ def location_finder(country, version, tags):
 							if tags[j][1] != 'NP0':
 								tags[j] = (tags[j][0],'TAR',tags[j][2])
 
+					elif rule['take'] == 'X':
+						for j in range(i-expr_len,i+1):
+							tags[j] = (tags[j][0],'IGN',tags[j][2])
+
 					elif rule['take'] == 1:
 						if i+1 < len(tags) and tags[i+1][1] != 'NP0':
 							tags[i+1] = (tags[i+1][0],'TAR',tags[i+1][2])
 
+					elif rule['take'] == 'R':
+						if i+1 < len(tags):
+							tags[i+1] = (tags[i+1][0],'IGN',tags[i+1][2])		
+
 					elif rule['take'] == -1:
 						if left >= 0 and tags[left][1] != 'NP0':
 							tags[left] = (tags[left][0],'TAR',tags[left][2])
+
+					elif rule['take'] == 'L':
+						if left >= 0:
+							tags[left] = (tags[left][0],'IGN',tags[left][2])
 							
 					else:
 						if i+1 < len(tags) and tags[i+1][1] == 'NP0' \
@@ -132,11 +151,14 @@ def location_finder(country, version, tags):
 
 
 
-"""Configuration et lancement du reddit scrape, puis tagging des titres des soumissions reddit
-résultats par TreeTagger et analyse des tags pour obtenir une liste de lieux potentiels. Ces
-lieux sont recherchés sur geonames. Les résultats de cette dernière recherche sont chargés dans
-deux dictionnaires, l'un pour l'affichage des photos sur le site et l'autre pour stocker les
-résultats dans la base de données sur mongoDB.
+"""Si l'utilisateur n'a pas demandé un scraping, recherche de documents du pays sélectionné
+dans la base de données; ces documents et leurs liens vers les photos seront renvoyés.
+Si l'utilisateur a demandé un scraping, ou s'il n'y a pas de documents du pays sélectionné
+dans la base de données, configuration et lancement du scrape sur Reddit, puis étiquetage
+des titres des soumissions résultats par TreeTagger, et analyse des étiquettes pour obtenir
+une liste de lieux potentiels. Ces lieux sont recherchés sur geonames. Les résultats de cette
+dernière recherche sont chargés dans deux dictionnaires, l'un pour l'affichage des photos sur
+le site et l'autre pour stocker les résultats dans la base de données sur mongoDB.
 """
 @rgn.route('/scraping',methods=['GET'])
 def scraping():

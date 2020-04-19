@@ -77,7 +77,8 @@ def report():
 
 
 
-"""Renvoit le nombre total de documents que le testeur en session doit tester.
+"""Renvoie le nombre total de documents que le testeur en session doit tester, et
+les versions du scraper disponibles.
 """
 @mdb.route('/get_count',methods=['GET'])
 def get_count():
@@ -85,8 +86,13 @@ def get_count():
 								{'code': 1, '_id': 0})
 	test_code = next(dbcounter.retrieve('Testeurs'))['code']
 	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
-	
-	return jsonify(nbtest=doc_number,pseudo=session['username'])
+
+	dbcounter.reinit(proj={'search_version': 1, '_id': 0})
+	version_list = []
+	for doc in dbcounter.retrieve('Versions_Scrape'):
+		version_list.append(doc['search_version'])
+
+	return jsonify(nbtest=doc_number,pseudo=session['username'],versions=version_list)
 
 
 

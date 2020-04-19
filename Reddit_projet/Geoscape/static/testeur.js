@@ -13,7 +13,7 @@ $(document).ready(function(){
 			type:"GET",
 			url:"/get_count",
 			success: createDiv    //créer le premier élément de la page qui demande au testeur le nombre de test à effectuer
-		}).fail(printError); 
+		}).fail(printError);
 
 	function printError(error){    //afficher la page d'erreur 
 		console.error("status: "+error['status']+"\nstatusText: "+error['statusText']);
@@ -24,6 +24,7 @@ $(document).ready(function(){
 
 		var nbtest=count['nbtest'];
 		var pseudo=count['pseudo'];
+		var search_version=count['versions'];
 		if (count!=0) {
 			var div= '<div id="divStart" class="test">';
 			div+= '<p>Bonjour '+pseudo+', vous avez '+nbtest+' tests à faire, veuillez choisir le nombre de tests que vous souhaitez effectuer.</p>';
@@ -32,6 +33,12 @@ $(document).ready(function(){
 			for (var i = 1; i <= nbtest; i++) {
 				div+= '<option value="'+i+'">'+i+'</option>';
 			}
+			div+= '</select>';
+			div+= '<select name="search_version" id="search_version">';
+			div+= '<option value="'+search_version[search_version.length -1]+'">Dernière Version</option>';
+			$.each(search_version,(index,version)=>{
+				div+= '<option value="'+version+'">'+version+'</option>';
+			});
 			div+= '</select>';
 			div+= '<button id="start">Commencer le test</button>';
 			div+= '</div>';
@@ -43,6 +50,7 @@ $(document).ready(function(){
 		//requête pour demander les données à traiter
 		$("#start").click(function(){
 			NB_TEST = parseInt($("#nbtest").val());
+			SEARCH_VERSION = $("#search_version").val();
 			$.ajax({
 				type:"GET",
 				url:"/get_results",
