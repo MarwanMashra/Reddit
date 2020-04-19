@@ -115,10 +115,10 @@ La requête:
 	...
 	<champs>: { <opérateur>: <valeur> }
 	...
-	<opérateur logique>: [ <champ>: <valeur>
+	<opérateur logique>: { <champ>: <valeur>
 						   ...
 						   <champ>: <valeur>
-						 ]
+						 }
 }
 La projection par inclusion:
 {
@@ -133,7 +133,8 @@ OU par exclusion
 	...
 	<champ>: 0
 }
-Si on veut retourner tous les champ passer un dictionnaire vide en deuxième paramètre.
+Si on veut retourner tous les champ laisser le paramètre par défaut (on ne
+veut jamais récupérer l'objet _id, non directement convertible en JSON).
 """
 class MongoLoad(Mongo):
 	def __init__(self,query=None,proj={'_id': 0}):

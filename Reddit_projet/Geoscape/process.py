@@ -45,7 +45,7 @@ def select_results(version, url_list):
 def good_neighbors(bad_vector, all_vectors):
 	f_idx = bad_vector[0][0] #Position dans all_vectors
 	l_idx = bad_vector[-1][0]
-	neighbors = [t[1:] for t in bad_vector]
+	neighbors = [t[1] for t in bad_vector]
 	final_index = 0
 
 	for vect in takewhile(lambda x: x[0] and x[2] == 'NP0', all_vectors[:f_idx][::-1]):
@@ -89,6 +89,7 @@ def create_rule():
 				bad_results.append(good_neighbors(list(g),comp_list))
 		
 		for result in bad_results:
+			print(result)
 			index = result['errpos']
 			lvect = len(result['errlist'][index])
 			rule_vect = result['errlist'][index:index+lvect]
@@ -106,7 +107,7 @@ def create_rule():
 			new_rule = {'country': doc['country'], 'expr': ' '.join(i[3] for i in rule_vect),
 						'pos': [i[2] for i in rule_vect], 'take': take,
 						'search_version': next_version, 'img_url': doc['img_url']}
-
+			print(new_rule)
 			rule_list.append(new_rule)
 
 	if rule_list:

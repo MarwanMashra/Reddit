@@ -48,6 +48,7 @@ Le module pymongo convertit automatiquement un objet de type bytes en BinData.
 """
 @mdb.route('/report',methods=['POST'])
 def report():
+	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	response = json.loads(request.data.decode('utf-8'))
 
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
@@ -123,7 +124,6 @@ dans la collection 'Resultats_Final_Expert_1'.
 """
 @mdb.route('/send_results',methods=['POST'])
 def send_results():
-	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	response = json.loads(request.data.decode('utf-8'))
 	tester = session['username']
 	version = response['search_version']
@@ -143,8 +143,7 @@ def send_results():
 	update = mongo.MongoUpd({'user_id': tester},{'$inc': {'num_answers': 1}})
 	update.singleval_upd('Testeurs')
 
-	dbfinder = mongo.MongoLoad({'user_id': tester},
-							   {'code': 1, '_id': 0})
+	dbfinder = mongo.MongoLoad({'user_id': tester},{'code': 1, '_id': 0})
 	test_code = next(dbfinder.retrieve('Testeurs'))['code']
 
 	dbfinder.reinit({'img_url': {'$in': url_list}, 'search_version': version},

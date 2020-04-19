@@ -26,9 +26,9 @@ $(document).ready(function(){
 		var pseudo=count['pseudo'];
 		if (count!=0) {
 			var div= '<div id="divStart" class="test">';
-			div+= '<p>Bonjour '+pseudo+', Vous avez '+nbtest+' test à faire, veuillez choisir le nombre de test que vous voulez passer</p>';
+			div+= '<p>Bonjour '+pseudo+', vous avez '+nbtest+' tests à faire, veuillez choisir le nombre de tests que vous souhaitez effectuer.</p>';
 			div+= '<select name="nbtest" id="nbtest">';
-			div+= '<option value="'+nbtest+'">Pas de limit</option>';
+			div+= '<option value="'+nbtest+'">Pas de limite</option>';
 			for (var i = 1; i <= nbtest; i++) {
 				div+= '<option value="'+i+'">'+i+'</option>';
 			}

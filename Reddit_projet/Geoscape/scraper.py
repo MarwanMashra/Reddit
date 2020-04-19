@@ -44,17 +44,17 @@ la recherche est élargie est permet de compenser les potentielles fautes d'orth
 	V   Woodlands
 """
 def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False):
-	url = 'http://api.geonames.org/searchJSON'
-	data = '?q='+location+'&country='+country_code+'&username=scrapelord'
+	query = ''.join(['http://api.geonames.org/searchJSON','?q=',location,
+					 '&country=',country_code,'&username=scrapelord'])
 	if fuzzy:
-		data += '&fuzzy=0.8'
-	search_res = requests.get(url+data,auth=('scrapelord','Blorp86'))
+		query += '&fuzzy=0.8'
+	search_res = requests.get(query,auth=('scrapelord','Blorp86'))
 
 	if search_res.status_code == 200:
 		search_res = search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
 		if search_res['totalResultsCount'] != 0:
 			dic_results['head']['total'] += 1
-			print_res = '' #Pour affichage test
+			print_res = ''
 			
 			if exact:
 				prio_list = []
