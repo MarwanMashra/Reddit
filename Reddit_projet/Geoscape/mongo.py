@@ -15,24 +15,25 @@ uniqueness on the combination of the index key values.'
 
 
 
-"""Classe de base dont héritent les autres. Permet d'obtenir des informations sur la
-base de données, mais pas d'opérer dessus. La connexion elle-même se fait dans le
-fichier db_init.py.
-"""
 class Mongo:
-	"""Vérifie l'existence d'une collection.
+	"""Classe de base dont héritent les autres. Permet d'obtenir des informations sur la
+	   base de données, mais pas d'opérer dessus. La connexion elle-même se fait dans le
+	   fichier db_init.py.
 	"""
+
 	@classmethod
 	def mongocheck(cls,coll_exists):
+		"""Vérifie l'existence d'une collection.
+		"""
 		return coll_exists in client.list_collection_names()
 
-	"""Vérifie l'existence d'un index. Renvoie vrai s'il existe, faux sinon. L'index
-	en paramètre doit être une liste de champs à indexer.
-	Retour de list_indexes(): itérateur sur des documents au format SON (dictionnaire
-	ordonné). Convertir en dico Python avant utilisation.
-	"""
 	@classmethod
 	def indexcheck(cls,coll_tocheck,index):
+		"""Vérifie l'existence d'un index. Renvoie vrai s'il existe, faux sinon. L'index
+		en paramètre doit être une liste de champs à indexer.
+		Retour de list_indexes(): itérateur sur des documents au format SON (dictionnaire
+		ordonné). Convertir en dico Python avant utilisation.
+		"""
 		coll = client[coll_tocheck]
 		for idx in coll.list_indexes():
 			idx = idx.to_dict()	#SON->dictionnaire
@@ -42,13 +43,13 @@ class Mongo:
 		 		return True
 		return False
 
-	"""Création d'un index n'imposant pas une contrainte d'unicité.
-	Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera passé
-	à la fonction comme dictionnaire, puis converti en liste de tuples pour le passage à la
-	méthode de pymongo.collections.
-	"""
 	@classmethod
 	def nonunique_index(cls,coll_toindex,**index):
+		"""Création d'un index n'imposant pas une contrainte d'unicité.
+		Syntaxe pour l'index en paramètre: <nom champ du document>=<'A' ou 'D'>,... Sera
+		passé à la fonction comme dictionnaire, puis converti en liste de tuples pour le
+		passage à la méthode de pymongo.collections.
+		"""
 		coll = client[coll_toindex]
 		if len(index) > 0 and cls.indexcheck(coll_toindex,list(index.keys())):
 			return
@@ -58,25 +59,26 @@ class Mongo:
 			index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 			coll.create_index(index_list,name=index_name)
 
-	"""Compte et renvoit le nombre de documents dans une collection.
-	'query' est une requête pour filtrer les documents devant être comptés.
-	"""
 	@classmethod
 	def mongocount(cls,coll_tocount,query={}):
+		"""Compte et renvoit le nombre de documents dans une collection.
+		'query' est une requête pour filtrer les documents devant être comptés.
+		"""
 		coll = client[coll_tocount]
 		return coll.count_documents(query)
 
 
 
-"""Insertion de documents: création de la collection si elle n'existe pas, et création
-optionnelle d'un index sur les champs passés en paramètre. Syntaxe pour l'index en
-paramètre: <nom champ du document>=<'A' ou 'D'>,... L'index impose une contrainte
-d'unicité sur ces champs.
-De pymongo: 'An important note about collections (and databases) in MongoDB is that
-they are created lazily (...) Collections and databases are created when the first
-document is inserted into them.'
-"""
 class MongoSave(Mongo):
+	"""Insertion de documents: création de la collection si elle n'existe pas, et création
+	optionnelle d'un index sur les champs passés en paramètre. Syntaxe pour l'index en
+	paramètre: <nom champ du document>=<'A' ou 'D'>,... L'index impose une contrainte
+	d'unicité sur ces champs.
+	De pymongo: 'An important note about collections (and databases) in MongoDB is that
+	they are created lazily (...) Collections and databases are created when the first
+	document is inserted into them.'
+	"""
+
 	def __init__(self,dblist):
 		self.document = dblist
 
@@ -107,36 +109,37 @@ class MongoSave(Mongo):
 
 
 
-"""Recherche et extraction d'un document sous forme de liste de document(s).
-Format paramètres:
-La requête:
-{
-	<champs>: <valeur>,
-	...
-	<champs>: { <opérateur>: <valeur> }
-	...
-	<opérateur logique>: { <champ>: <valeur>
-						   ...
-						   <champ>: <valeur>
-						 }
-}
-La projection par inclusion:
-{
-	<champ>: 1
-	...
-	<champ>: 1
-	(optionnel) '_id': 0 (seul exclusion qui marche avec l'inclusion)
-}
-OU par exclusion
-{
-	<champ>: 0
-	...
-	<champ>: 0
-}
-Si on veut retourner tous les champ laisser le paramètre par défaut (on ne
-veut jamais récupérer l'objet _id, non directement convertible en JSON).
-"""
 class MongoLoad(Mongo):
+	"""Recherche et extraction d'un document sous forme de liste de document(s).
+	Format paramètres:
+	La requête:
+	{
+		<champs>: <valeur>,
+		...
+		<champs>: { <opérateur>: <valeur> }
+		...
+		<opérateur logique>: { <champ>: <valeur>
+							   ...
+							   <champ>: <valeur>
+							 }
+	}
+	La projection par inclusion:
+	{
+		<champ>: 1
+		...
+		<champ>: 1
+		(optionnel) '_id': 0 (seul exclusion qui marche avec l'inclusion)
+	}
+	OU par exclusion
+	{
+		<champ>: 0
+		...
+		<champ>: 0
+	}
+	Si on veut retourner tous les champ laisser le paramètre par défaut (on ne
+	veut jamais récupérer l'objet _id, non directement convertible en JSON).
+	"""
+
 	def __init__(self,query=None,proj={'_id': 0}):
 		self.query = query
 		self.projection = proj
@@ -157,25 +160,28 @@ class MongoLoad(Mongo):
 			return coll.find(self.query,self.projection,limit=limit)
 
 	def dltdocument(self,coll_toupd):
+		"""Efface un ou plusieurs documents correspondants à la requête.
+		"""
 		coll = client[coll_toupd]
 		return coll.delete_many(self.query).deleted_count
 
 
 
-"""Mises à jour.
-Format paramètres:
-La requête: voir classe précédente.
-La mise à jour, pour un document ou un ensemble de documents:
-{
-	<opérateur>:
-				{
-					<champ>: <nouvelle_valeur>
-					...
-				}
-	...
-}
-"""
 class MongoUpd(Mongo):
+	"""Mises à jour.
+	Format paramètres:
+	La requête: voir classe précédente.
+	La mise à jour, pour un document ou un ensemble de documents:
+	{
+		<opérateur>:
+					{
+						<champ>: <nouvelle_valeur>
+						...
+					}
+		...
+	}
+	"""
+
 	def __init__(self,query,update,list_id=[],list_val=[]):
 		self.query = query
 		self.update = update
@@ -190,17 +196,17 @@ class MongoUpd(Mongo):
 		self.list_id = list_id
 		self.list_val = list_val
 
-	"""Mise à jour groupée: plusieurs documents reçoivent la même mise à jour,
-	c'est-à-dire un même champ est mis à jour avec la même valeur pour tous.
-	"""
 	def singleval_upd(self,coll_toupd):
+		"""Mise à jour groupée: plusieurs documents reçoivent la même mise à jour,
+		c'est-à-dire un même champ est mis à jour avec la même valeur pour tous.
+		"""
 		coll = client[coll_toupd]
 		coll.update_many(self.query,self.update)
 
-	"""Mise à jour individualisée: pour le même champ, chaque document reçoit
-	une valeur propre. Le paramètre multfield désigne ce champ individualisé.
-	"""
 	def multval_upd(self,coll_toupd,multfield):
+		"""Mise à jour individualisée: pour le même champ, chaque document reçoit
+		une valeur propre. Le paramètre multfield désigne ce champ individualisé.
+		"""
 		coll = client[coll_toupd]
 		assert self.list_id and self.list_val,'Listes manquantes pour la méthode de mise à jour.'
 		for ident, value in zip(self.list_id,self.list_val):

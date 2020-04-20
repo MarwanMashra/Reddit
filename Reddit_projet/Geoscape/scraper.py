@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, json, os, pprint, praw, re, requests, sys, time, treetaggerwrapper
+import copy, json, os, pprint, praw, re, requests, sys, time
+import treetaggerwrapper as ttagger
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
 from flask import Blueprint, jsonify, request
+from prawcore import NotFound
 from itertools import groupby
 from more_itertools import windowed
 
@@ -12,38 +14,40 @@ rgn = Blueprint('rgn',__name__)
 
 
 
-"""Stockage dans un dictionnaire des informations sur le résultat geonames."""
-def dicload(res_dic, store_dic, opt_loc=None):
+def dicload(res_dic, store_dic, loc):
+	"""Stockage dans un dictionnaire des informations sur le résultat geonames.
+	"""
+
 	store_dic['name'] = res_dic['name']
 	store_dic['lng'] = res_dic['lng']
 	store_dic['lat'] = res_dic['lat']
-
-	if opt_loc is not None:
-		store_dic['featureclass'] = res_dic['fcl']
-		store_dic['location'] = opt_loc
+	store_dic['featureclass'] = res_dic['fcl']
+	store_dic['location'] = loc
 
 
 
-"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
-la fonction location_finder. D'abord recherche d'un match exact, en privilégiant les lieux
-naturels plutôt qu'humains; sinon choix du premier résultat de recherche.
-Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
-tous les résultats, et dans un dico qui sera enregistré dans la base de données.
-Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
-la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
-"""
-"""Geonames feature classes ('fcl')
-	A   Administrative divisions
-	H   Surface waters
-	L   Parks/reserves
-	P   Populated places
-	R   Roads
-	S   Structures
-	T   Mountains/Islands
-	U   Undersea
-	V   Woodlands
-"""
-def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exact=False, fuzzy=False):
+def geonames_query(location, country_code, dic_results, dic_mongo, exact=False, fuzzy=False):
+	"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
+	la fonction location_finder. D'abord recherche d'un match exact (exact=True), en
+	privilégiant les lieux naturels plutôt qu'humains; sinon choix du premier résultat de
+	recherche.
+	Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
+	tous les résultats, et dans un dico qui sera enregistré dans la base de données.
+	Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
+	la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
+	"""
+	"""Geonames feature classes ('fcl')
+		A   Administrative divisions
+		H   Surface waters
+		L   Parks/reserves
+		P   Populated places
+		R   Roads
+		S   Structures
+		T   Mountains/Islands
+		U   Undersea
+		V   Woodlands
+	"""
+
 	query = ''.join(['http://api.geonames.org/searchJSON','?q=',location,
 					 '&country=',country_code,'&username=scrapelord'])
 	if fuzzy:
@@ -66,7 +70,6 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 							prio_list.insert(0,res)
 							break
 				if prio_list:
-					dicload(prio_list[0],dic_tmp)
 					dicload(prio_list[0],dic_mongo,location)
 					print_res = prio_list[0]['name']
 
@@ -74,9 +77,9 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 					return False
 
 			else:
-				dicload(search_res['geonames'][0],dic_tmp)
 				dicload(search_res['geonames'][0],dic_mongo,location)
-			dic_results['results'].append(dic_tmp)
+			dic_results['results'].append(dic_mongo)
+
 			print('Premier résultat Geonames: ',search_res['geonames'][0]['name'])
 			print('Meilleur résultat Geonames: ',print_res)
 			
@@ -89,14 +92,15 @@ def geonames_query(location, country_code, dic_results, dic_tmp, dic_mongo, exac
 
 
 
-"""Recherche des lieux potentiels dans le titre de la soumission Reddit. La recherche de base
-considère que les noms propres voisins forment un lieu. Par-dessus cette recherche, les règles
-générées par l'analyse des résultats des tests utilisateurs fournissent des mots particuliers
-à prendre en compte (dotés de l'étiquette 'TAR') ou à ignorer (l'étiquette 'IGN').
-En plus des lieux potentiels, la liste résultat stocke le nombre de mots non sélectionnés
-séparant les lieux retenus.
-"""
 def location_finder(country, version, tags):
+	"""Recherche des lieux potentiels dans le titre de la soumission Reddit. La recherche de base
+	considère que les noms propres voisins forment un lieu. Par-dessus cette recherche, les règles
+	générées par l'analyse des résultats des tests utilisateurs fournissent des mots particuliers
+	à prendre en compte (dotés de l'étiquette 'TAR') ou à ignorer (l'étiquette 'IGN').
+	En plus des lieux potentiels, la liste résultat stocke le nombre de mots non sélectionnés
+	séparant les lieux retenus.
+	"""
+
 	db = mongo.MongoLoad({'country': country, 'search_version': {'$lte': version}},
 						 {'expr': 1, 'pos': 1, 'take': 1, '_id': 0})
 
@@ -151,17 +155,17 @@ def location_finder(country, version, tags):
 
 
 
-"""Si l'utilisateur n'a pas demandé un scraping, recherche de documents du pays sélectionné
-dans la base de données; ces documents et leurs liens vers les photos seront renvoyés.
-Si l'utilisateur a demandé un scraping, ou s'il n'y a pas de documents du pays sélectionné
-dans la base de données, configuration et lancement du scrape sur Reddit, puis étiquetage
-des titres des soumissions résultats par TreeTagger, et analyse des étiquettes pour obtenir
-une liste de lieux potentiels. Ces lieux sont recherchés sur geonames. Les résultats de cette
-dernière recherche sont chargés dans deux dictionnaires, l'un pour l'affichage des photos sur
-le site et l'autre pour stocker les résultats dans la base de données sur mongoDB.
-"""
 @rgn.route('/scraping',methods=['GET'])
 def scraping():
+	"""Si l'utilisateur n'a pas demandé un scraping, recherche de documents du pays sélectionné
+	dans la base de données; ces documents et leurs liens vers les photos seront renvoyés.
+	Si l'utilisateur a demandé un scraping, ou s'il n'y a pas de documents du pays sélectionné
+	dans la base de données, configuration et lancement du scrape sur Reddit, puis étiquetage
+	des titres des soumissions résultats par TreeTagger, et analyse des étiquettes pour obtenir
+	une liste de lieux potentiels. Ces lieux sont recherchés sur geonames. Les résultats de cette
+	dernière recherche sont chargés dans deux dictionnaires, l'un pour l'affichage des photos sur
+	le site et l'autre pour stocker les résultats dans la base de données sur mongoDB.
+	"""
 
 	#Paramètres de la requête Javascript
 	rgnversion = request.args.get('search_version')
@@ -176,14 +180,13 @@ def scraping():
 
 	if not scrape_requested and check_db:
 		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},
-							   	   {'title': 1, 'img_url': 1, 'name': 1, 'lng': 1,
-							   	    'lat': 1, '_id': 0})
+							   	   {'scraped_title': 0, 'tag_list': 0, 'location_list': 0,
+							   	    'featureclass': 0, '_id': 0})
 		stored_docs = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
 
 	#Initialisation de la collection des résultats sur la base de données si elle n'existe pas
 	if not check_db:
-		dbstart = mongo.MongoSave([{'key': 'Initialisation de la collection Resultats_RGN.',
-									'count': 0}])
+		dbstart = mongo.MongoSave([{'key': 'Initialisation de la collection Resultats_RGN.'}])
 		dbstart.storeindb('Resultats_RGN',img_url='A',search_version='D')
 		dbstart.nonunique_index('Resultats_RGN',country='A',search_version='D')
 
@@ -202,9 +205,7 @@ def scraping():
 	if not scrape_requested and stored_docs:
 		for doc in stored_docs:
 			dic_results['head']['total'] += 1
-			dic_results['results'].append({'img': doc['img_url'], 'text': doc['title'],
-										   'search_version': rgnversion, 'name': doc['name'],
-										   'lng': doc['lng'], 'lat': doc['lat']})
+			dic_results['results'].append(doc)
 
 	else:
 		#Configuration recherche reddit
@@ -216,16 +217,15 @@ def scraping():
 		print('\033[92m'+target_sub.display_name+'\033[0m'
 			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
 
-		#Configuration TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
-		reddit_tagger = treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
+		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
+		reddit_tagger = ttagger.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
 		#Résultats de la recherche dans le subreddit
 		test_posts = target_sub.search(query,limit=limit)
 		for post in test_posts:
 			try:
 				 attempt = post.url
-			except praw.exceptions.APIException as e:
-				print(e.message())
+			except NotFound:
 				continue
 
 			if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
@@ -235,7 +235,7 @@ def scraping():
 					print(res.group(1))
 
 					#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
-					reddit_tags = treetaggerwrapper.make_tags(reddit_tagger.tag_text(res.group(1)),
+					reddit_tags = ttagger.make_tags(reddit_tagger.tag_text(res.group(1)),
 								  exclude_nottags=True)
 
 					#Le nom du pays est exclu des lieux potentiels; rajouté seulement en dernier recours
@@ -262,21 +262,23 @@ def scraping():
 					print(location_list,'\n')
 
 					#Geonames
-					dic_mongo = {'link': post.permalink, 'img_url': post.url, #Lien direct vers la photo
-								 'search_version': rgnversion, 'country': country,
-								 'title': res.group(1).strip(), 'tag_list': reddit_tags,
-								 'location_list': location_list}
-
-					#Dico initialisé en dehors de la fonction pour pouvoir comparer après l'appel
 					date = time.gmtime(post.created_utc)
-					dic_tmp = {'img': post.url, 'text': post.title, 'search_version': rgnversion,
-							   'url': 'https://www.reddit.com'+post.permalink,
-							   'date': {'year': date.tm_year, 'month': date.tm_mon,
-										'day': date.tm_mday, 'hour': date.tm_hour,
-										'min': date.tm_min, 'sec': date.tm_sec},
-								'author': {'name': post.author.name,
-										  #'icon': post.author.icon_img,
-										   'profile': 'https://www.reddit.com/user/'+post.author.name}}
+					dic_mongo = {'link': 'https://www.reddit.com'+post.permalink,
+								 'img_url': post.url, 'search_version': rgnversion,
+								 'country': country, 'scraped_title': res.group(1).strip(),
+								 'text': post.title, 'tag_list': reddit_tags,
+								 'location_list': location_list,
+								 'date': {'year': date.tm_year, 'month': date.tm_mon,
+										  'day': date.tm_mday, 'hour': date.tm_hour,
+										  'min': date.tm_min, 'sec': date.tm_sec}}
+
+					try:
+						attempt = post.author.icon_img
+					except NotFound:
+						pass
+					else:
+						dic_mongo['author'] = {'name': post.author.name, 'icon': post.author.icon_img,
+										       'profile': 'https://www.reddit.com/user/'+post.author.name}
 
 					"""Recherche de match exact pour tous les lieux de la liste.
 					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
@@ -284,20 +286,19 @@ def scraping():
 					"""
 					this_search = [True,False,False,False,False,True]
 
-					while 'name' not in dic_tmp and this_search:
+					while 'name' not in dic_mongo and this_search:
 						for loc in location_list:
 							if type(loc) == str:
-								if geonames_query(loc,country_code,dic_results,dic_tmp,
-										dic_mongo,exact=this_search[0],fuzzy=this_search[1]):
+								if geonames_query(loc,country_code,dic_results,dic_mongo,
+										exact=this_search[0],fuzzy=this_search[1]):
 									break
 						this_search = this_search[2:]
 
 					#En dernier recours, le pays lui-même s'il est dans le titre
-					if 'name' not in dic_tmp and country in res.group(1):
+					if 'name' not in dic_mongo and country in res.group(1):
 						location_list.append(country)
 						dic_mongo['location_list'] = location_list
-						geonames_query(country,country_code,dic_results,dic_tmp,
-							dic_mongo,exact=True)
+						geonames_query(country,country_code,dic_results,dic_mongo,exact=True)
 
 					if 'location' in dic_mongo:
 						dic_tostore = copy.deepcopy(dic_mongo)

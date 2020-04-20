@@ -11,14 +11,15 @@ mdb = Blueprint('mdb',__name__)
 
 
 
-"""Crée la collection de stockage des versions du scraper si elle n'existe pas.
-Récupère les résultats de tests finaux et les traite pour générer de nouvelles
-règles. Une nouvelle version du scraper est alors créée pour utiliser ces règles. 
-Toutes les versions sont envoyées à la page de lancement du scrape et sont
-proposées à l'utilisateur.
-"""
 @mdb.route('/get_list_version',methods=['GET'])
 def get_list_version():
+	"""Crée la collection de stockage des versions du scraper si elle n'existe pas.
+	Récupère les résultats de tests finaux et les traite pour générer de nouvelles
+	règles. Une nouvelle version du scraper est alors créée pour utiliser ces règles. 
+	Toutes les versions sont envoyées à la page de lancement du scrape et sont
+	proposées à l'utilisateur.
+	"""
+
 	dbfinder = mongo.MongoLoad(proj={'search_version': 1, '_id': 0})
 
 	if not dbfinder.mongocheck('Versions_Scrape'):
@@ -36,18 +37,19 @@ def get_list_version():
 
 
 
-"""Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais
-lieu choisi). L'information est rajoutée au document dans la base de données, ce
-qui le rend disponible pour le test avancé.
-Sélection aléatoire de 3 testeurs à partir de la collection 'Testeurs', et stockage
-de leurs codes comme champ du document signalé.
-Ce champ 'testers' est de type BSON BinData: une chaîne en base 64 représentant un
-champ de bits de taille quelconque, ce qui permet de stocker des valeurs supérieures
-à 2^63-1.
-Le module pymongo convertit automatiquement un objet de type bytes en BinData.
-"""
 @mdb.route('/report',methods=['POST'])
 def report():
+	"""Déclenchée par le signalement d'une image mal affichée sur la carte (mauvais
+	lieu choisi). L'information est rajoutée au document dans la base de données, ce
+	qui le rend disponible pour le test avancé.
+	Sélection aléatoire de 3 testeurs à partir de la collection 'Testeurs', et stockage
+	de leurs codes comme champ du document signalé.
+	Ce champ 'testers' est de type BSON BinData: une chaîne en base 64 représentant un
+	champ de bits de taille quelconque, ce qui permet de stocker des valeurs supérieures
+	à 2^63-1.
+	Le module pymongo convertit automatiquement un objet de type bytes en BinData.
+	"""
+
 	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	response = json.loads(request.data.decode('utf-8'))
 
@@ -77,11 +79,12 @@ def report():
 
 
 
-"""Renvoie le nombre total de documents que le testeur en session doit tester, et
-les versions du scraper disponibles.
-"""
 @mdb.route('/get_count',methods=['GET'])
 def get_count():
+	"""Renvoie le nombre total de documents que le testeur en session doit tester, et
+	les versions du scraper disponibles.
+	"""
+
 	dbcounter = mongo.MongoLoad({'user_id': session['username']},
 								{'code': 1, '_id': 0})
 	test_code = next(dbcounter.retrieve('Testeurs'))['code']
@@ -96,12 +99,13 @@ def get_count():
 
 
 
-"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du
-scraping) de la base de données, en fonction du testeur qui a lancé la requête, et
-renvoie en format JSON des résultats à la page de tests.
-"""
 @mdb.route('/get_results',methods=['GET'])
 def get_results():
+	"""Extraction de documents à tester de la collection 'Résultats_RGN' (résultats du
+	scraping) de la base de données, en fonction du testeur qui a lancé la requête, et
+	renvoie en format JSON des résultats à la page de tests.
+	"""
+
 	result_value = request.args.get('value')
 	version = request.args.get('version')
 	limit = int(request.args.get('limit'))
@@ -120,16 +124,17 @@ def get_results():
 
 
 
-"""Réception des résultats du test-expert et stockage dans la base de données;
-décrémentation de la champ 'testers' des documents qui viennent d'être testés
-de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
-testeur dans la collection 'Testeurs'.
-Si tous les tests sur un document ont été réalisés, lance la sélection des
-résultats finaux à partir des choix des testeurs, puis stocke ce résultat final
-dans la collection 'Resultats_Final_Expert_1'.
-"""
 @mdb.route('/send_results',methods=['POST'])
 def send_results():
+	"""Réception des résultats du test-expert et stockage dans la base de données;
+	décrémentation de la champ 'testers' des documents qui viennent d'être testés
+	de la collection 'Resultats_RGN', et incrémentation du champ 'num_answers' du
+	testeur dans la collection 'Testeurs'.
+	Si tous les tests sur un document ont été réalisés, lance la sélection des
+	résultats finaux à partir des choix des testeurs, puis stocke ce résultat final
+	dans la collection 'Resultats_Final_Expert_1'.
+	"""
+
 	response = json.loads(request.data.decode('utf-8'))
 	tester = session['username']
 	version = response['search_version']

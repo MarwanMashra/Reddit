@@ -8,12 +8,13 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 
 
 
-"""A partir de l'inscription d'un utilisateur en tant qu'admin, la fonction crée
-un profil testeur pour cet utilisateur dans la collection 'Testeurs' de la base
-de données. Chaque testeur reçoit un code unique qui sert à identifier les documents
-de 'Resultats_RGN' qu'il/elle doit tester.
-"""
 def db_tester(username):
+	"""A partir de l'inscription d'un utilisateur en tant qu'admin, la fonction crée
+	un profil testeur pour cet utilisateur dans la collection 'Testeurs' de la base
+	de données. Chaque testeur reçoit un code unique qui sert à identifier les documents
+	de 'Resultats_RGN' qu'il/elle doit tester.
+	"""
+
 	next_code = 0
 	if mongo.Mongo.mongocheck('Testeurs'):
 		next_code = mongo.Mongo.mongocount('Testeurs')
