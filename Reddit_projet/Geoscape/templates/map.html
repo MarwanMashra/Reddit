@@ -10,10 +10,13 @@
     <!-- leaflet's javascript-->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <!-- Veuillez mettre le bon chemin vers les fichier dans votre localhost -->
-    <script src="{{url_for('static', filename = 'pays.js')}}"></script>
+	<script src="{{url_for('static', filename = 'pays.js')}}"></script>
+	<script src="{{url_for('static', filename = 'overlappingMarkerSpiderfier.js')}}"></script> 
     <script src="{{url_for('static', filename = 'map.js')}}"></script>
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'map.css')}}">
     
@@ -21,42 +24,56 @@
 </head>
 <body>
 
-	<h2>Les Plus Beaux Panoramas du Monde</h2>
+	<div class="split left">
+		<div id="parametres">
+			<h2>Les Plus Beaux Panoramas du Monde</h2>
 
-	<!-- select pays est dans le ficheir pays.js, c'est pour éviter que le fichier html soit trop grand et difficile à naviger -->
-	<span>Sélection du pays:  </span>
-	<div id="pays"></div><br>
+			<!-- select pays est dans le ficheir pays.js, c'est pour éviter que le fichier html soit trop grand et difficile à naviger -->
+			<span>Veuillez choisir le pays:  </span>
+			<div id="pays"></div><br>
 
-	<!-- select search_version -->
-	</b><span>Version du scraper:  </span>
-	<div id="search_version"></div>
+			<!-- select search_version -->
+			</b><span>Version du scraper:  </span>
+			<div id="search_version"></div>
 
-	<!-- select search_version -->
-	<span>Nombre d'images:  </span>
-	<select name="nombre_image" id="nombre_image"> 
-		<option value="5">5</option>
-		<option value="10">10</option>
-		<option value="20">20</option>
-		<option value="50">50</option>
-	</select>
-	<br>
-	
-	<input type="checkbox" name="scraping_input" id="scraping_input" value="scraping">
-	<label for="scraping_input" id="scraping_label">Lancer une nouvelle recherche d'images sur Reddit.</label>
-	<br><br><button id="submit" >Chercher</button>
-	<span id="error">Veuillez choisir un pays</span>
-	{% if username %}
-        <br><span id="deconnexion">Bonjour {{ username }} <a href="{{ url_for('deconnexion') }}">Déconnexion</a></span>
-    {% endif %}
+			<!-- select search_version -->
+			<span>Nombre d'images:  </span>
+			<select name="nombre_image" id="nombre_image"> 
+				<option value="5">5</option>
+				<option value="10">10</option>
+				<option value="20">20</option>
+				<option value="50">50</option>
+			</select>
+			<br>
+			
+			<input type="checkbox" name="scraping_input" id="scraping_input" value="scraping">
+			<label for="scraping_input" id="scraping_label">Vous voulez faire une nouvelle recherche d'image sur Reddit.</label>
+			<br><button id="submit" >Chercher</button><br>
+			<span id="error">Veuillez choisir un pays</span>
+			{% if username %}
+				<br><span id="deconnexion">Salut {{ username }} <a href="{{ url_for('deconnexion') }}">Déconnexion</a></span>
+			{% endif %}
+		</div>
+		
+		<!--div qui sera remplacé-->
+		<div id="container">
+			<div id="replace"></div>
+		</div>
+		
+
+	</div>
 	
 	<!-- position map + dimmension-->
-	<br><div id="mapid"></div>
+	<div class="split right">
+		<div id="mapid"></div>
+	</div>
+	
 
-	<!--div qui sera remplacé-->
-	<div id="replace"></div>
+	
 
 
 
 
 </body>
 </html>
+
