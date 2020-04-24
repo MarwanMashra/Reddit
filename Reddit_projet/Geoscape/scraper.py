@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, geocoder, json, os, pprint, praw, re, requests, sys, time
+import copy, geocoder, json, os, pprint, praw, re, sys, time
 import treetaggerwrapper as ttagger
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
@@ -164,6 +164,7 @@ def scraping():
 	Ces lieux sont recherchés sur geonames. Les résultats de cette dernière recherche sont chargés
 	dans deux dictionnaires, l'un pour l'affichage des photos sur le site et l'autre pour stocker
 	les résultats dans la base de données sur mongoDB.
+	NB: le scraping tente toujours d'obtenir de nouvelles photos (absentes de mongoDB).
 	"""
 
 	#Paramètres de la requête Javascript
@@ -172,22 +173,6 @@ def scraping():
 	country_code = request.args.get('country_code')
 	limit = int(request.args.get('nombre_image'))
 	scrape_requested = True if request.args.get('scraping') == 'true' else False
-
-	#L'utilisateur souhaite consulter les images déjà stockées plutôt que de scraper
-	stored_docs = []
-	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
-
-	if not scrape_requested and check_db:
-		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},
-							   	   {'scraped_title': 0, 'tag_list': 0, 'location_list': 0,
-							   	    'featureclass': 0, '_id': 0})
-		stored_docs = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
-
-	#Initialisation de la collection des résultats sur la base de données si elle n'existe pas
-	if not check_db:
-		dbstart = mongo.MongoSave([{'key': 'Initialisation de la collection Resultats_RGN.'}])
-		dbstart.storeindb('Resultats_RGN',img_url='A',search_version='D')
-		dbstart.nonunique_index('Resultats_RGN',country='A',search_version='D')
 
 	#Dico de résultats pour l'affichage sur le site
 	search_res = geocoder.geonames(country,key='scrapelord',auth='Blorp86',maxRows=1)
@@ -198,13 +183,29 @@ def scraping():
 	#Liste de chargement pour la base de données
 	database_list = []
 
-	#Les documents pris dans la base de données sont mis dans le dictionnaire de résultats
-	if not scrape_requested:
-		existing_docs = []
-		for doc in stored_docs:
-			dic_results['head']['total'] += 1
-			dic_results['results'].append(doc)
-			existing_docs.append('-url:'+doc['img_url'])
+	if scrape_requested: #On ne charge que les img_url
+		load_arg = {'img_url': 1, '_id': 0}
+	else: #On charge le document pour l'affichage
+		load_arg = {'scraped_title': 0, 'tag_list': 0, 'location_list': 0,
+					'featureclass': 0, '_id': 0}
+
+	existing_urls = []
+	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
+
+	#Initialisation de la collection des résultats si elle n'existe pas
+	if not check_db:
+		dbstart = mongo.MongoSave([{'key': 'Initialisation de la collection Resultats_RGN.'}])
+		dbstart.storeindb('Resultats_RGN',img_url='A',search_version='D')
+		dbstart.nonunique_index('Resultats_RGN',country='A',search_version='D')
+
+	#Les documents pris dans la base de données sont chargés dans le dictionnaire de résultats
+	else:
+		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},load_arg)
+		for doc in dbfinder.retrieve('Resultats_RGN'):
+			if not scrape_requested:
+				dic_results['head']['total'] += 1
+				dic_results['results'].append(doc)
+			existing_urls.append('-url:'+doc['img_url'])
 
 	if scrape_requested or dic_results['head']['total'] < limit:
 		#Configuration recherche reddit
@@ -217,19 +218,30 @@ def scraping():
 			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
 
 		#Exclure les documents déjà récupérés
-		if not scrape_requested:
-			query += (' ' + ' '.join(existing_docs)).rstrip()
+		user_limit = limit
+		num_urls = sum(len(url) for url in existing_urls)
+
+		if len(query) + len(existing_urls) + num_urls <= 512: #Taille max requête Reddit
+			query += (' ' + ' '.join(existing_urls)).rstrip()
+			limit -= dic_results['head']['total']
+		else:
+			limit = min(2*limit+num_urls,1000)
+			existing_urls = [url[5:] for url in existing_urls]
 
 		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
 		reddit_tagger = ttagger.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
 		#Résultats de la recherche dans le subreddit
-		test_posts = target_sub.search(query,limit=limit - dic_results['head']['total'])
+		test_posts = target_sub.search(query,limit=limit)
+
 		for post in test_posts:
 			try:
 				 attempt = post.url
 			except NotFound:
-				continue
+				continue #Problème avec la photo; éliminé
+
+			if post.url in existing_urls:
+				continue #Déjà stocké dans la base de données; éliminé
 
 			if re.search(country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
 				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
@@ -306,6 +318,11 @@ def scraping():
 					if 'location' in dic_mongo:
 						dic_tostore = copy.deepcopy(dic_mongo)
 						database_list.append(dic_tostore)
+
+					user_limit -= 1
+					if not user_limit:
+						break
+
 					print('\n###############')
 				else:
 					print('')
