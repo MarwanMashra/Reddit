@@ -41,6 +41,14 @@ Whitelisted IP address:
 Connection string
 mongodb+srv://scrapelord:<password>@redditscrape-bxkhv.mongodb.net/test?retryWrites=true&w=majority
 
+#########
+
+GLIFFY
+https://go.gliffy.com/
+
+troyfau@gmail.com
+Blorp86
+
 
 
 

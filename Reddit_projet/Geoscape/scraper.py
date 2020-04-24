@@ -159,12 +159,13 @@ def location_finder(country, version, tags):
 def scraping():
 	"""Si l'utilisateur n'a pas demandé un scraping, recherche de documents du pays sélectionné
 	dans la base de données; ces documents et leurs liens vers les photos seront renvoyés.
-	Si l'utilisateur a demandé un scraping, ou s'il n'y a pas de documents du pays sélectionné
-	dans la base de données, configuration et lancement du scrape sur Reddit, puis étiquetage
-	des titres des soumissions résultats par TreeTagger, et analyse des étiquettes pour obtenir
-	une liste de lieux potentiels. Ces lieux sont recherchés sur geonames. Les résultats de cette
-	dernière recherche sont chargés dans deux dictionnaires, l'un pour l'affichage des photos sur
-	le site et l'autre pour stocker les résultats dans la base de données sur mongoDB.
+	Si l'utilisateur a demandé un scraping, ou s'il n'y a pas ou pas assez de documents du pays
+	sélectionné dans la base de données, configuration et lancement du scrape sur Reddit, puis
+	étiquetage des titres des soumissions résultats par TreeTagger, et analyse des étiquettes
+	pour obtenir une liste de lieux potentiels.
+	Ces lieux sont recherchés sur geonames. Les résultats de cette dernière recherche sont chargés
+	dans deux dictionnaires, l'un pour l'affichage des photos sur le site et l'autre pour stocker
+	les résultats dans la base de données sur mongoDB.
 	"""
 
 	#Paramètres de la requête Javascript
@@ -202,35 +203,42 @@ def scraping():
 	#Liste de chargement pour la base de données
 	database_list = []
 
-	if not scrape_requested and stored_docs:
+	#Les documents pris dans la base de données sont mis dans le dictionnaire de résultats
+	if not scrape_requested:
+		existing_docs = []
 		for doc in stored_docs:
 			dic_results['head']['total'] += 1
 			dic_results['results'].append(doc)
+			existing_docs.append('-url:'+doc['img_url'])
 
-	else:
+	if scrape_requested or dic_results['head']['total'] < limit:
 		#Configuration recherche reddit
-		reddit=praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
-			   password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
+		reddit = praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
+			     password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
-		target_sub = reddit.subreddit('EarthPorn')                     
+		target_sub = reddit.subreddit('EarthPorn')
 		query = 'title:'+country
 		print('\033[92m'+target_sub.display_name+'\033[0m'
 			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
+
+		#Exclure les documents déjà récupérés
+		if not scrape_requested:
+			query += (' ' + ' '.join(existing_docs)).rstrip()
 
 		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
 		reddit_tagger = ttagger.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
 
 		#Résultats de la recherche dans le subreddit
-		test_posts = target_sub.search(query,limit=limit)
+		test_posts = target_sub.search(query,limit=limit - dic_results['head']['total'])
 		for post in test_posts:
 			try:
 				 attempt = post.url
 			except NotFound:
 				continue
 
-			if re.search('.*'+country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
-				#Match tous les caractères depuis le début de la ligne sauf [OC] et s'arrête au premier [ ou (
-				res = re.search('^(?:\[OC\])?([^[(]+)',post.title)
+			if re.search(country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
+				res = re.search('^(?:[[(].*[])])?([^[(]+)',post.title) #[])] , ] pas besoin de \] si ] en premier
 				if (res):
 					print(res.group(1))
 
