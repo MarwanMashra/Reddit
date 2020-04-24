@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, json, os, pprint, praw, re, requests, sys, time
+import copy, geocoder, json, os, pprint, praw, re, requests, sys, time
 import treetaggerwrapper as ttagger
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
@@ -14,14 +14,14 @@ rgn = Blueprint('rgn',__name__)
 
 
 
-def dicload(res_dic, store_dic, loc):
+def dicload(geo_res, store_dic, loc):
 	"""Stockage dans un dictionnaire des informations sur le résultat geonames.
 	"""
 
-	store_dic['name'] = res_dic['name']
-	store_dic['lng'] = res_dic['lng']
-	store_dic['lat'] = res_dic['lat']
-	store_dic['featureclass'] = res_dic['fcl']
+	store_dic['name'] = geo_res.address		#Nom
+	store_dic['lng'] = geo_res.lng
+	store_dic['lat'] = geo_res.lat
+	store_dic['featureclass'] = geo_res.feature_class
 	store_dic['location'] = loc
 
 
@@ -48,41 +48,39 @@ def geonames_query(location, country_code, dic_results, dic_mongo, exact=False, 
 		V   Woodlands
 	"""
 
-	query = ''.join(['http://api.geonames.org/searchJSON','?q=',location,
-					 '&country=',country_code,'&username=scrapelord'])
-	if fuzzy:
-		query += '&fuzzy=0.8'
-	search_res = requests.get(query,auth=('scrapelord','Blorp86'))
+	ex_arg = {'name_equals': location} if exact else {}
+	fuz_arg = {'fuzzy': 0.8} if fuzzy else {}
 
-	if search_res.status_code == 200:
-		search_res = search_res.json() #Décodeur JSON appliqué à l'objet Response renvoyé par la requête
-		if search_res['totalResultsCount'] != 0:
+	search_res = geocoder.geonames(location,key='scrapelord',auth='Blorp86',
+		country=country_code,maxRows=200,**ex_arg,**fuz_arg)
+
+	if search_res.status_code == 200:	#HTTP status
+		if search_res:
 			dic_results['head']['total'] += 1
 			print_res = ''
-			
+
 			if exact:
 				prio_list = []
-				for res in search_res['geonames']:
-					if res['name'].lower() == location.lower():
-						if res['fcl'] in ['A','P','R','S'] and not prio_list:
-							prio_list.append(res)
-						elif res['fcl'] in ['H','L','T','U','V']:
-							prio_list.insert(0,res)
-							break
+				for res in search_res:
+					if res.feature_class in ['A','P','R','S'] and not prio_list:
+						prio_list.append(res)
+					elif res.feature_class in ['H','L','T','U','V']:
+						prio_list.insert(0,res)
+						break
+
 				if prio_list:
 					dicload(prio_list[0],dic_mongo,location)
-					print_res = prio_list[0]['name']
-
+					print_res = prio_list[0].address	#Nom
 				else:
 					return False
 
 			else:
-				dicload(search_res['geonames'][0],dic_mongo,location)
-			dic_results['results'].append(dic_mongo)
+				dicload(search_res[0],dic_mongo,location)
 
-			print('Premier résultat Geonames: ',search_res['geonames'][0]['name'])
+			dic_results['results'].append(dic_mongo)
+			print('Premier résultat Geonames: ',search_res[0].address)
 			print('Meilleur résultat Geonames: ',print_res)
-			
+
 			return True
 
 		else:
@@ -192,13 +190,10 @@ def scraping():
 		dbstart.nonunique_index('Resultats_RGN',country='A',search_version='D')
 
 	#Dico de résultats pour l'affichage sur le site
-	search_res = requests.get('http://api.geonames.org/searchJSON?q='+country+'&username=scrapelord',
-				 auth=('scrapelord','Blorp86'))
-	search_res = search_res.json()
-	
+	search_res = geocoder.geonames(country,key='scrapelord',auth='Blorp86',maxRows=1)
 	dic_results = {'head': {'total': 0,
-							'country': {'name': country, 'lng': search_res['geonames'][0]['lng'],
-										'lat': search_res['geonames'][0]['lat']}},
+							'country': {'name': country, 'lng': search_res[0].lng,
+										'lat': search_res[0].lat}},
 				   'results': []}
 	#Liste de chargement pour la base de données
 	database_list = []
