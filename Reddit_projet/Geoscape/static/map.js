@@ -1,9 +1,13 @@
 $(document).ready(function(){
 
+	//variable globale
+	var search_version;
 	var session;
 	var reported_images=[];
+	var est_admin;
+
 	//si vous êtes en train de tester, mettez le à true, vous serez pas obligez à lancer une recherche à chaque fois
-	var DEBUG=true;
+	var DEBUG=false;
 	var admin=false;
 	//création de la carte
 	var mymap = L.map('mapid');                 
@@ -23,34 +27,40 @@ $(document).ready(function(){
 		success: createElementsUSer
 	}).fail(printError); 
 
-	
 	function createElementsUSer(x){
 		session = x;
-		//création de selecteur search_version	 (pour les admins)
-		if(session && session['admin?']){
-
-			//requête get_list_version
-			$.ajax({
-				type:"GET",
-				url:"/get_list_version",
-				success: createVerionSelector,
-				error:  ()=>{var search_version=["1.00"];createVerionSelector(search_version);}
-			});  
-			
-			function createVerionSelector(search_version){
-				var select= '</b><span>Version du scraper:  </span>';
-				select+= '<select name="search_version" id="search_version">';
-				select+= '<option value="'+search_version[search_version.length -1]+'">Dernière Version</option>';
-				$.each(search_version,(index,version)=>{
-					select+= '<option value="'+version+'">'+version+'</option>';
-				});
-				select+= '</select><br>';
-				$("#search_version").replaceWith(select);
-			} 
-		}
+		est_admin = session && session['admin?'];
+		
+		
 	}
 	
+	//requête get_list_version
+	$.ajax({
+		type:"GET",
+		url:"/get_list_version",
+		success: createVerionSelector 
+	}).fail(printError);  
+	
 
+	function createVerionSelector(search_v){
+		//par défaut la dernière version  
+		search_version = search_v[search_v.length -1];
+
+		//création de selecteur search_version	 (pour les admins)
+		if(est_admin){
+
+			var select= '</b><span>Version du scraper:  </span>';
+			select+= '<select name="search_version" id="search_version">';
+			select+= '<option value="'+search_v[search_v.length -1]+'">Dernière Version</option>';
+			$.each(search_v,(index,version)=>{
+				select+= '<option value="'+version+'">'+version+'</option>';
+			});
+			select+= '</select><br>';
+			$("#search_version").replaceWith(select);
+
+		}
+	} 
+	
 	     
 	
 	//création du checkbox du choix de nouvellle recherche
@@ -71,6 +81,10 @@ $(document).ready(function(){
 		else{
 			$("#error").hide();
 			var pays= valeur.split(",");      //séparer le nom de pays et le code de pays 
+			var search_version="1.00"
+			if(est_admin)
+				search_version = $("#search_version").val();	
+				
 			//envoyer la requête ajax pour demander l'éxecution de la focntion scraping dans le script python
 			$.ajax({
 				type:"GET",
@@ -79,7 +93,7 @@ $(document).ready(function(){
 				data:{                     //passer les paramètres au script python
 					country:pays[0],
 					country_code:pays[1],
-					search_version: $("#search_version").val(),
+					search_version: search_version,
 					scraping: $("input[id='scraping_input']").is(':checked'),
 					nombre_image: parseInt($("#nombre_image").val())
 				},
