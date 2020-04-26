@@ -54,13 +54,13 @@ def report():
 	response = json.loads(request.data.decode('utf-8'))
 
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
-								'img_url': response['img'], 'test_result': 'NOT_OK'},
+								'img_url': response['img_url'], 'test_result': 'NOT_OK'},
 							   {'img_url': 1, '_id': 0})
 
 	try:
 		next(dbfinder.retrieve('Resultats_RGN'))
 	except StopIteration: #L'image n'a pas été signalée auparavant
-		update = mongo.MongoUpd({'img_url': response['img'],
+		update = mongo.MongoUpd({'img_url': response['img_url'],
 								 'search_version': response['search_version']},
 								{'$set': {'test_result': 'NOT_OK'}})
 		update.singleval_upd('Resultats_RGN')

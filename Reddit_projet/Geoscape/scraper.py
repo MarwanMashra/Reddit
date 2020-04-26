@@ -14,19 +14,7 @@ rgn = Blueprint('rgn',__name__)
 
 
 
-def dicload(geo_res, store_dic, loc):
-	"""Stockage dans un dictionnaire des informations sur le résultat geonames.
-	"""
-
-	store_dic['name'] = geo_res.address		#Nom
-	store_dic['lng'] = geo_res.lng
-	store_dic['lat'] = geo_res.lat
-	store_dic['featureclass'] = geo_res.feature_class
-	store_dic['location'] = loc
-
-
-
-def geonames_query(location, country_code, dic_results, dic_mongo, exact=False, fuzzy=False):
+def geonames_query(location, country_code, dic_results, dic_mongo, exact=True, fuzzy=False):
 	"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
 	la fonction location_finder. D'abord recherche d'un match exact (exact=True), en
 	privilégiant les lieux naturels plutôt qu'humains; sinon choix du premier résultat de
@@ -36,55 +24,42 @@ def geonames_query(location, country_code, dic_results, dic_mongo, exact=False, 
 	Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
 	la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
 	"""
-	"""Geonames feature classes ('fcl')
-		A   Administrative divisions
-		H   Surface waters
-		L   Parks/reserves
-		P   Populated places
-		R   Roads
-		S   Structures
-		T   Mountains/Islands
-		U   Undersea
-		V   Woodlands
-	"""
 
 	ex_arg = {'name_equals': location} if exact else {}
 	fuz_arg = {'fuzzy': 0.8} if fuzzy else {}
 
-	search_res = geocoder.geonames(location,key='scrapelord',auth='Blorp86',
-		country=country_code,maxRows=200,**ex_arg,**fuz_arg)
+	res = geocoder.geonames(location,key='scrapelord',auth='Blorp86',
+							country=country_code,maxRows=10,**ex_arg,**fuz_arg)
 
-	if search_res.status_code == 200:	#HTTP status
-		if search_res:
-			dic_results['head']['total'] += 1
-			print_res = ''
+	if res.status_code == 200:
+		if res:
+			search_res = res[0]
 
 			if exact:
-				prio_list = []
-				for res in search_res:
-					if res.feature_class in ['A','P','R','S'] and not prio_list:
-						prio_list.append(res)
-					elif res.feature_class in ['H','L','T','U','V']:
-						prio_list.insert(0,res)
+				for r in res:
+					if r.feature_class in ['H','L','T','U','V']:
+						search_res = r
 						break
 
-				if prio_list:
-					dicload(prio_list[0],dic_mongo,location)
-					print_res = prio_list[0].address	#Nom
-				else:
-					return False
+			dic_results['head']['total'] += 1
 
-			else:
-				dicload(search_res[0],dic_mongo,location)
+			dic_mongo['name'] = search_res.address	#Nom
+			dic_mongo['lng'] = search_res.lng
+			dic_mongo['lat'] = search_res.lat
+			dic_mongo['feature_class'] = search_res.feature_class
+			dic_mongo['location'] = location
 
 			dic_results['results'].append(dic_mongo)
-			print('Premier résultat Geonames: ',search_res[0].address)
-			print('Meilleur résultat Geonames: ',print_res)
+			if exact:
+				print('Meilleur résultat Geonames: ',dic_mongo['name'])
+			else:
+				print('Premier résultat Geonames: ',dic_mongo['name'])
 
 			return True
 
 		else:
 			return False
+
 	else:
 		sys.exit("Erreur dans la recherche Geonames: code "+search_res.status_code+". Arrêt du programme.")
 
@@ -186,8 +161,8 @@ def scraping():
 	if scrape_requested: #On ne charge que les img_url
 		load_arg = {'img_url': 1, '_id': 0}
 	else: #On charge le document pour l'affichage
-		load_arg = {'scraped_title': 0, 'tag_list': 0, 'location_list': 0,
-					'featureclass': 0, '_id': 0}
+		load_arg = {'scraped_title': 0, 'location_list': 0,
+					'feature_class': 0, '_id': 0}
 
 	existing_urls = []
 	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
@@ -219,13 +194,12 @@ def scraping():
 
 		#Exclure les documents déjà récupérés
 		user_limit = limit
-		num_urls = sum(len(url) for url in existing_urls)
 
-		if len(query) + len(existing_urls) + num_urls <= 512: #Taille max requête Reddit
+		if len(query) + len(existing_urls) + sum(len(url) for url in existing_urls) <= 512:
 			query += (' ' + ' '.join(existing_urls)).rstrip()
 			limit -= dic_results['head']['total']
-		else:
-			limit = min(2*limit+num_urls,1000)
+		else: #512 caractères max dans une requête Reddit
+			limit = 1000 #Max permis par Reddit
 			existing_urls = [url[5:] for url in existing_urls]
 
 		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
@@ -245,7 +219,7 @@ def scraping():
 
 			if re.search(country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
 				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
-				res = re.search('^(?:[[(].*[])])?([^[(]+)',post.title) #[])] , ] pas besoin de \] si ] en premier
+				res = re.search('^(?:[\[(].*[\])])?([^[(]+)',post.title)
 				if (res):
 					print(res.group(1))
 
@@ -280,9 +254,10 @@ def scraping():
 					date = time.gmtime(post.created_utc)
 					dic_mongo = {'link': 'https://www.reddit.com'+post.permalink,
 								 'img_url': post.url, 'search_version': rgnversion,
-								 'country': country, 'scraped_title': res.group(1).strip(),
-								 'text': post.title, 'tag_list': reddit_tags,
-								 'location_list': location_list,
+								 'country': country, 'country_code': country_code,
+								 'scraped_title': res.group(1).strip(), 'text': post.title,
+								 'tag_list': reddit_tags, 'location_list': location_list,
+
 								 'date': {'year': date.tm_year, 'month': date.tm_mon,
 										  'day': date.tm_mday, 'hour': date.tm_hour,
 										  'min': date.tm_min, 'sec': date.tm_sec}}
