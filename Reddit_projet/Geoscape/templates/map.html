@@ -25,34 +25,42 @@
 <body>
 
 	<div class="split left">
-		<div id="parametres">
-			<h2>Les Plus Beaux Panoramas du Monde</h2>
-
-			<!-- select pays est dans le ficheir pays.js, c'est pour éviter que le fichier html soit trop grand et difficile à naviger -->
-			<span>Veuillez choisir le pays:  </span>
-			<div id="pays"></div><br>
-
-			<!-- select search_version -->
-			</b><span>Version du scraper:  </span>
-			<div id="search_version"></div>
-
-			<!-- select search_version -->
-			<span>Nombre d'images:  </span>
-			<select name="nombre_image" id="nombre_image"> 
-				<option value="5">5</option>
-				<option value="10">10</option>
-				<option value="20">20</option>
-				<option value="50">50</option>
-			</select>
-			<br>
-			
-			<input type="checkbox" name="scraping_input" id="scraping_input" value="scraping">
-			<label for="scraping_input" id="scraping_label">Vous voulez faire une nouvelle recherche d'image sur Reddit.</label>
-			<br><button id="submit" >Chercher</button><br>
-			<span id="error">Veuillez choisir un pays</span>
-			{% if username %}
+		<div>
+			<div id="parametres">
+				<h2>Les Plus Beaux Panoramas du Monde</h2>
+	
+				<!-- select pays est dans le ficheir pays.js, c'est pour éviter que le fichier html soit trop grand et difficile à naviger -->
+				<span>Veuillez choisir le pays:  </span>
+				<div id="pays"></div><br>
+	
+				<!-- select search_version -->
+				<div id="search_version"></div>
+	
+				<!-- select search_version -->
+				<span>Nombre d'images:  </span>
+				<select name="nombre_image" id="nombre_image"> 
+					<option value="5">5</option>
+					<option value="10">10</option>
+					<option value="20">20</option>
+					<option value="50">50</option>
+				</select>
+				<br>
+				<!-- checkbox pour faire une nouvelle recherche -->
+				<div id="scraping_div"></div>
+				
+				<br><button id="submit" >Chercher</button><br>
+				<span id="error">Veuillez choisir un pays</span>
+	
+				<!--{% if username %}
 				<br><span id="deconnexion">Salut {{ username }} <a href="{{ url_for('deconnexion') }}">Déconnexion</a></span>
-			{% endif %}
+				{% endif %}-->
+				
+			</div>
+
+			<div id="profil">
+
+			</div>
+			
 		</div>
 		
 		<!--div qui sera remplacé-->
