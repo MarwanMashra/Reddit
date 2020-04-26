@@ -51,8 +51,12 @@ def report():
 	"""
 
 	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
-	response = json.loads(request.data.decode('utf-8'))
-
+	data = json.loads(request.data.decode('utf-8'))
+	response = data['image']
+	value= data['value']               # value vaut soit OK soit NOT_OK
+	list_words= data['list_words']     # list_words contient les mots choisi iniquant le lieu (si OK, la liste sera vide)
+	
+	
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
 								'img_url': response['img'], 'test_result': 'NOT_OK'},
 							   {'img_url': 1, '_id': 0})
