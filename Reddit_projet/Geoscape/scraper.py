@@ -3,6 +3,7 @@
 
 import copy, geocoder, json, os, pprint, praw, re, sys, time
 import treetaggerwrapper as ttagger
+import Geoscape.geoloc as geo
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
 from flask import Blueprint, jsonify, request
@@ -11,57 +12,6 @@ from itertools import groupby
 from more_itertools import windowed
 
 rgn = Blueprint('rgn',__name__)
-
-
-
-def geonames_query(location, country_code, dic_results, dic_mongo, exact=True, fuzzy=False):
-	"""Recherche du lieu sur geonames à partir d'un lieu potentiel de la liste produite par
-	la fonction location_finder. D'abord recherche d'un match exact (exact=True), en
-	privilégiant les lieux naturels plutôt qu'humains; sinon choix du premier résultat de
-	recherche.
-	Stockage des informations dans un dico temporaire qui sera ensuite rajouté au dico de
-	tous les résultats, et dans un dico qui sera enregistré dans la base de données.
-	Par défaut, fuzzy=False et la recherche se fait avec fuzzy=1. Avec le paramètre à True,
-	la recherche est élargie est permet de compenser les potentielles fautes d'orthographe.
-	"""
-
-	ex_arg = {'name_equals': location} if exact else {}
-	fuz_arg = {'fuzzy': 0.8} if fuzzy else {}
-
-	res = geocoder.geonames(location,key='scrapelord',auth='Blorp86',
-							country=country_code,maxRows=10,**ex_arg,**fuz_arg)
-
-	if res.status_code == 200:
-		if res:
-			search_res = res[0]
-
-			if exact:
-				for r in res:
-					if r.feature_class in ['H','L','T','U','V']:
-						search_res = r
-						break
-
-			dic_results['head']['total'] += 1
-
-			dic_mongo['name'] = search_res.address	#Nom
-			dic_mongo['lng'] = search_res.lng
-			dic_mongo['lat'] = search_res.lat
-			dic_mongo['feature_class'] = search_res.feature_class
-			dic_mongo['location'] = location
-
-			dic_results['results'].append(dic_mongo)
-			if exact:
-				print('Meilleur résultat Geonames: ',dic_mongo['name'])
-			else:
-				print('Premier résultat Geonames: ',dic_mongo['name'])
-
-			return True
-
-		else:
-			return False
-
-	else:
-		sys.exit("Erreur dans la recherche Geonames: code "+search_res.status_code+". Arrêt du programme.")
 
 
 
@@ -270,37 +220,42 @@ def scraping():
 						dic_mongo['author'] = {'name': post.author.name, 'icon': post.author.icon_img,
 										       'profile': 'https://www.reddit.com/user/'+post.author.name}
 
-					"""Recherche de match exact pour tous les lieux de la liste.
-					Si aucun résultat, nouveau parcours de la liste et on prend le premier résultat.
-					Si aucun résultat, on passe à une fuzzy search.
+					""" R: recherche standard
+						RF: recherche fuzzy
+						E: recherche exacte
+						EH: recherche exacte sur ensembles humains
+						EN: recherche exacte sur ensembles naturels
 					"""
-					this_search = [True,False,False,False,False,True]
 
-					while 'name' not in dic_mongo and this_search:
-						for loc in location_list:
-							if type(loc) == str:
-								if geonames_query(loc,country_code,dic_results,dic_mongo,
-										exact=this_search[0],fuzzy=this_search[1]):
-									break
-						this_search = this_search[2:]
+					placefinder = geo.LocationList(country_code,location_list)
+					geo_res = placefinder.geo_search('EN EH','R','RF')	#Objet GeoQuery
 
 					#En dernier recours, le pays lui-même s'il est dans le titre
-					if 'name' not in dic_mongo and country in res.group(1):
-						location_list.append(country)
-						dic_mongo['location_list'] = location_list
-						geonames_query(country,country_code,dic_results,dic_mongo,exact=True)
+					if geo_res.result is None and country in res.group(1):
+						placefinder.reinit(country_code,[country])
+						geo_res = placefinder.geo_search('E')
 
-					if 'location' in dic_mongo:
+					if geo_res.result is not None:
+						dic_results['head']['total'] += 1
+						print('Résultat GeoNames: ',geo_res.result.address,end='')
+						print('. Après ',placefinder.counter,' requêtes.')
+
+						dic_mongo['name'] = geo_res.result.address	#Nom
+						dic_mongo['lng'] = geo_res.result.lng
+						dic_mongo['lat'] = geo_res.result.lat
+						dic_mongo['feature_class'] = geo_res.result.feature_class
+						dic_mongo['location'] = geo_res.location
+
+						dic_results['results'].append(dic_mongo)
+
 						dic_tostore = copy.deepcopy(dic_mongo)
 						database_list.append(dic_tostore)
 
-					user_limit -= 1
-					if not user_limit:
-						break
+						user_limit -= 1
+						if not user_limit:
+							break
 
 					print('\n###############')
-				else:
-					print('')
 
 		#Chargement dans la base de données des documents générés par le scrape
 		documents = mongo.MongoSave(database_list)

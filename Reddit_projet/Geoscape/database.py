@@ -53,12 +53,11 @@ def report():
 	#La méthode POST renvoie des bytes: convertir en string JSON puis en dico python
 	data = json.loads(request.data.decode('utf-8'))
 	response = data['image']
-	value= data['value']               # value vaut soit OK soit NOT_OK
-	list_words= data['list_words']     # list_words contient les mots choisi iniquant le lieu (si OK, la liste sera vide)
-	
-	
+	value = data['value']				#OK ou NOT_OK
+	word_list = data['list_words']		#Vide si OK
+		
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
-								'img_url': response['img_url'], 'test_result': 'NOT_OK'},
+								'img_url': response['img_url'], 'test_result': {'$exists': True}},
 							   {'img_url': 1, '_id': 0})
 
 	try:
@@ -66,7 +65,7 @@ def report():
 	except StopIteration: #L'image n'a pas été signalée auparavant
 		update = mongo.MongoUpd({'img_url': response['img_url'],
 								 'search_version': response['search_version']},
-								{'$set': {'test_result': 'NOT_OK'}})
+								{'$set': {'test_result': value, 'test_list': word_list}})
 		update.singleval_upd('Resultats_RGN')
 
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
@@ -94,10 +93,13 @@ def get_count():
 	test_code = next(dbcounter.retrieve('Testeurs'))['code']
 	doc_number = dbcounter.mongocount('Resultats_RGN',{'testers': {'$bitsAllSet': 2**test_code}})
 
-	dbcounter.reinit(proj={'search_version': 1, '_id': 0})
 	version_list = []
-	for doc in dbcounter.retrieve('Versions_Scrape'):
-		version_list.append(doc['search_version'])
+	dbcounter.reinit({'testers': {'$bitsAllSet': 2**test_code}},
+					 {'search_version': 1, '_id': 0})
+
+	for doc in dbcounter.retrieve('Resultats_RGN'):
+		if doc['search_version'] not in version_list:
+			version_list.append(doc['search_version'])
 
 	return jsonify(nbtest=doc_number,pseudo=session['username'],versions=version_list)
 
@@ -120,7 +122,7 @@ def get_results():
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
-					{'search_version': 1, 'img_url': 1, 'tag_list': 1,
+					{'search_version': 1, 'img_url': 1, 'tag_list': 1, 'test_list': 1,
 					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
 	doc_list = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
 
