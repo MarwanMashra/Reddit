@@ -149,6 +149,20 @@ def deconnexion():
 	return redirect(url_for('connexion'))
 
 
+@app.route('/get_session',methods=['GET'])
+def get_session():
+	
+	dic={'is_connected':False}
+
+	if session:
+		dic={
+			'is_connected':True,
+			'username':session['username'],
+			'admin?':session['admin?']
+		}	
+
+	return dic
+
 
 @app.route('/test')
 @app.route('/test.html')
