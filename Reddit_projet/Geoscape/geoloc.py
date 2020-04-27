@@ -19,16 +19,17 @@ from urllib.error import HTTPError
 
 
 
+SEARCH_TYPES = ['E', 'EN', 'EH', 'EN EH', 'EH EN', 'RF', 'R']
+
+
+
 class LocationList(Sequence):
 	def __init__(self, code, loclist):
+		self.__locations = loclist
+
 		self.country_code = code
 		if type(self.country_code) != str:
 			raise TypeError('country code must be a string')
-
-		self.__locations = loclist
-		if len(self) == 0:
-			raise ValueError('LocationList object cannot be initialized empty')
-
 		self.counter = 0
 
 	def __len__(self):
@@ -42,20 +43,19 @@ class LocationList(Sequence):
 			   +',['+','.join(str(loc) for loc in self.__locations)+'])')
 
 	def __str__(self):
-		return ', '.join(loc for loc in self.__locations if type(loc) == str)
+		return '['+', '.join(loc for loc in self.__locations if type(loc) == str)+']'
 
-	#Méthodes cadeaux: __contains__, __iter__, count, index
+	#Méthodes héritées: __contains__, __iter__, count, index
 
 	#Pas de __setitem__
 	#Pas de __delitem__
 
 	def reinit(self, code, loclist):
+		self.__locations = loclist
+
 		self.country_code = code
 		if type(self.country_code) != str:
 			raise TypeError('country code must be a string')
-		self.__locations = loclist
-		if len(self) == 0:
-			raise ValueError('LocationList object cannot be initialized empty')
 		self.counter = 0
 
 	def tostore(self):
@@ -63,21 +63,30 @@ class LocationList(Sequence):
 
 	def geo_search(self, *search_order):
 		self.counter = 0
+		if not any(loc for loc in self.__locations): #Liste ne contient que des 0
+			dummy = GeoQuery.__new__(GeoQuery)
+			setattr(dummy,'location',None)
+			setattr(dummy,'result',None)
+			return dummy
+
 		for search in search_order:
+			if search not in SEARCH_TYPES:
+				raise GeoError(search)
 			for loc in self.__locations:
 				if type(loc) == str:
 					self.counter += 1
 					search_res = GeoQuery(loc,self.country_code,search)	#Objet résultat
 					if search_res.result is not None:
 						return search_res
-		return search_res
-
+			return search_res	#avec champ 'result' == None
 
 
 class GeoQuery:
 	def __init__(self, loc, code, searchtype='R', max_return=None):
 		self.location = loc
 
+		if searchtype not in SEARCH_TYPES:
+			raise GeoError(searchtype)
 		extra_args = {'fuzzy': 0.8} if searchtype == 'RF' else {}
 		rows = max_return if max_return is not None else 1
 
@@ -108,4 +117,10 @@ class GeoQuery:
 				self.result = None
 		else:
 			raise HTTPError(search_res.url,search_res.status_code,
-							'GeoNames request failed',test.headers,None)
+							'GeoNames request failed',search_res.headers,None)
+
+
+
+class GeoError(Exception):
+	def __init__(self, string):
+		super().__init__('\''+string+'\''+' '+'n\'est pas un type de recherche valide')

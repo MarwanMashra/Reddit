@@ -169,7 +169,7 @@ def scraping():
 
 			if re.search(country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
 				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
-				res = re.search('^(?:[\[(].*[\])])?([^[(]+)',post.title)
+				res = re.search('^(?:[\[(].*[\])])?([^\[(]+)',post.title)
 				if (res):
 					print(res.group(1))
 
@@ -218,7 +218,7 @@ def scraping():
 						pass
 					else:
 						dic_mongo['author'] = {'name': post.author.name, 'icon': post.author.icon_img,
-										       'profile': 'https://www.reddit.com/user/'+post.author.name}
+											'profile': 'https://www.reddit.com/user/'+post.author.name}
 
 					""" R: recherche standard
 						RF: recherche fuzzy
@@ -255,7 +255,7 @@ def scraping():
 						if not user_limit:
 							break
 
-					print('\n###############')
+				print('\n###############')
 
 		#Chargement dans la base de données des documents générés par le scrape
 		documents = mongo.MongoSave(database_list)
