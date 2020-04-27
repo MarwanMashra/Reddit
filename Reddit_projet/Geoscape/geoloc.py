@@ -21,6 +21,8 @@ from urllib.error import HTTPError
 
 SEARCH_TYPES = ['E', 'EN', 'EH', 'EN EH', 'EH EN', 'RF', 'R']
 
+typerr_msg = 'country code must be a string'
+
 
 
 class LocationList(Sequence):
@@ -29,7 +31,7 @@ class LocationList(Sequence):
 
 		self.country_code = code
 		if type(self.country_code) != str:
-			raise TypeError('country code must be a string')
+			raise TypeError(typerr_msg)
 		self.counter = 0
 
 	def __len__(self):
@@ -55,7 +57,7 @@ class LocationList(Sequence):
 
 		self.country_code = code
 		if type(self.country_code) != str:
-			raise TypeError('country code must be a string')
+			raise TypeError(typerr_msg)
 		self.counter = 0
 
 	def tostore(self):
@@ -63,7 +65,7 @@ class LocationList(Sequence):
 
 	def geo_search(self, *search_order):
 		self.counter = 0
-		if not any(loc for loc in self.__locations): #Liste ne contient que des 0
+		if not any(False if type(loc) == int else True for loc in self.__locations):
 			dummy = GeoQuery.__new__(GeoQuery)
 			setattr(dummy,'location',None)
 			setattr(dummy,'result',None)
@@ -78,13 +80,15 @@ class LocationList(Sequence):
 					search_res = GeoQuery(loc,self.country_code,search)	#Objet résultat
 					if search_res.result is not None:
 						return search_res
-			return search_res	#avec champ 'result' == None
+		return search_res	#avec champ 'result' == None
 
 
 class GeoQuery:
 	def __init__(self, loc, code, searchtype='R', max_return=None):
 		self.location = loc
 
+		if type(code) != str: 
+			raise TypeError(typerr_msg)
 		if searchtype not in SEARCH_TYPES:
 			raise GeoError(searchtype)
 		extra_args = {'fuzzy': 0.8} if searchtype == 'RF' else {}
