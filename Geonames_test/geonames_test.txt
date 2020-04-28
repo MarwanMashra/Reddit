@@ -1,0 +1,175 @@
+France, Jura, FR
+France, Val d'Isère, FR
+France, Chamonix, FR
+France, Corsica, FR
+France, Montriond, FR
+France, Haute Savoie, FR
+France, Roc d'Enfer, FR
+France, Rhône-Alpes, FR
+Armenia, Ararat, AM
+Armenia, Mount Ararat, AM
+Armenia, Geghnam, AM
+Armenia, Azat River, AM
+Armenia, Tatev, AM
+Armenia, Mount Ararat, AM
+Armenia, Sevan, AM
+Armenia, Dilijan, AM
+Armenia, Lori, AM
+Argentina, Patagonia, AR
+Argentina, Fitz Roy, AR
+Argentina, El Bolsón, AR
+Argentina, Cerro Torre, AR
+Argentina, Rio De las Vueltas, AR
+Argentina, Perito Moreno Glacier, AR
+Spain, Playa de las Catedrales, AR
+Spain, Bardenas, ES
+Spain, Boca del Infierno, ES
+Spain, Val d'Echo, ES
+Spain, Picos de Europa, ES
+Spain, Asturias, ES
+Spain, Roque de los Muchachos, ES
+Spain, La Palma, ES
+Spain, Santander, ES
+Spain, Sierra de Gredos, ES
+Spain, Mallorca, ES
+Spain, Castillo de Alange, ES
+Spain, Playa de Barro, ES
+Spain, Llanes, ES
+Spain, Mayorga de Campos, ES
+Spain, Andalucia, ES
+Spain, Urkiola, ES
+Spain, Sierra Nevada, ES
+Spain, Extremadura, ES
+Switzerland, Oeschinensee, CH
+Switzerland, Appenzell, CH
+Switzerland, Gimmelwald, CH
+Switzerland, Zermatt, CH
+Switzerland, Matterhorn, CH
+Switzerland, Alps, CH
+Switzerland, Moiry Glacier, CH
+Switzerland, Gschwantenmad, CH
+Switzerland, Hirzel, CH
+Switzerland, Gastlosen, CH
+Switzerland, St. Gallen, CH
+Switzerland, Piz Glüschaint, CH
+Switzerland, St. Moritz, CH
+Switzerland, Gimmelwald, CH
+Switzerland, Aletsch Glacier, CH
+Switzerland, Wallis, CH
+Switzerland, Lauterbrunnen, CH
+Switzerland, Latschüelfurgga, CH
+Switzerland, Zürich, CH
+Switzerland, Wengen, CH
+Switzerland, Laax, CH
+Switzerland, Ried, CH
+Italy, Dolomites, IT
+Italy, Lago Limides, IT
+Italy, Tre Cime de Lavaredo, IT
+Italy, Seceda, IT
+Italy, Passo Giau, IT
+Italy, Lago di Nambino, IT
+Italy, Alps, IT
+Italy, Alpe di Siusi, IT
+Italy, Lago di Bràies, IT
+Italy, South Tyrol, IT
+United Kingdom, Northern Ireland, GB
+United Kingdom, Bluebell Woods, GB
+United Kingdom, Ivinghoe, GB
+United Kingdom, Pembrokeshire, GB
+United Kingdom, South Wales, GB
+United Kingdom, Lake District, GB
+United Kingdom, Dorset, GB
+Greece, Mt Pelion, GR
+Greece, Meteora, GR
+Greece, Elafonisi Beach, GR
+Greece, Kefallonia, GR
+Greece, Dimosari, GR
+Greece, Corfu, GR
+Greece, Zakynthos, GR
+Greece, Chalkidiki, GR
+Greece, Skiathos, GR
+Denmark, Bulbjerg, DK
+Denmark, Skagen, DK
+Denmark, Råbjerg Mile, DK
+Denmark, Møns Klint, DK
+Croatia, Plitvice Lakes, HR
+Croatia, Krka Falls, HR
+Croatia, Paklenica, HR
+Croatia, Zagreb, HR
+Croatia, Hvar, HR
+Croatia, Medvednica, HR
+Croatia, Marusici, Dalmatia, HR
+Croatia, Dubrovnik, HR
+Thailand, Hin Ta Hin Yai, TH
+Thailand, Koh Samui, TH
+Thailand, Khao Sok, TH
+Thailand, Andaman Sea, TH
+Thailand, Doi Inthanon, TH
+Thailand, Chiang Mai, TH
+Thailand, Phang Nga, TH
+Thailand, Namuang, TH
+Thailand, koh samui, TH
+Thailand, Koh Chang, TH
+Thailand, Kew Mae Pan, TH
+Guatemala, Xela, Santa Maria, GT
+Guatemala, Volcán de Fuego, GT
+Guatemala, Semuc Champey, GT
+Guatemala, Acatenango, GT
+Guatemala, Antigua, GT
+Guatemala, Volcán Atitlán, GT
+Guatemala, Lake Atitlán, GT
+Guatemala, Fuego, GT
+Guatemala, Pacaya, GT, (volcano)
+Norway, Senja, NO
+Norway, Kongsberg, NO
+Norway, Viken, NO
+Japan, Yoshinoyama, JP
+Japan, Fuji, JP
+Japan, Shiratani Unsuiko, JP
+Japan, Yakushima, JP
+Japan, Kyushu, JP
+Japan, Yamanashi, JP
+Japan, Lake Kawaguchiko, JP
+Japan, Kanagawa, JP
+Japan, Kamikochi, JP
+Japan, Kushimoto, JP
+Japan, Tokyo, JP
+Japan, Okinawa, JP
+Japan, Aoiike, JP
+Japan, Shirogane, JP
+Japan, Hokkaido, JP
+Japan, Himeji, JP
+South Korea, Jeolla, KR
+South Korea, Daedunsan, KR
+South Korea, Wolchulsan, KR
+South Korea, Gongju, KR
+South Korea, Imhanri, KR
+South Korea, Seryangji, KR
+South Korea, Jebibong, KR
+South Korea, Geomdansan, KR
+South Korea, Jeju Island, KR
+South Korea, Gongjusi, KR
+South Korea, Haesindang, KR
+South Korea, Seongsan Ilchulbong, KR
+South Korea, Seoraksan, KR
+Bolivia, Huayna Potosi, BO
+Bolivia, Sud Lipez, BO
+Bolivia, South Potosi, BO
+Bolivia, Cordillera de los Frailes, BO
+Nepal, Poon Hill, NP
+Nepal, Machhapuchhre, NP
+Nepal, Annapurna, NP
+Nepal, Mt Everest, NP
+Ethiopia, Simien Mountains, ET
+Ethiopia, Bale Mountains, ET
+Ethiopia, Dallol, ET, (volcano)
+Ethiopia, Bahir Dar, ET
+Ethiopia, Lalibela, ET
+Ethiopia, Gonder, ET
+Ethiopia, Hudad, ET
+Jordan, Irbid, JO
+Jordan, Jerash, JO
+Jordan, Wadi Ghuweir, JO
+Bulgaria, Pirin Mountain, BG
+Bulgaria, Burgas, BG
+Bulgaria, Belogradcnik, BG
