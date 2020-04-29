@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import copy, geocoder, json, os, pprint, praw, re, sys, time
-import treetaggerwrapper as ttagger
+from copy import deepcopy
+from itertools import groupby
+from os import getcwd
+from pprint import pprint
+from re import search
+from time import gmtime
+
+import praw, prawcore
+from flask import Blueprint, jsonify, request
+from more_itertools import windowed
+from treetaggerwrapper import TreeTagger, make_tags
+
 import Geoscape.geoloc as geo
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
-from flask import Blueprint, jsonify, request
-from prawcore import NotFound
-from itertools import groupby
-from more_itertools import windowed
 
 rgn = Blueprint('rgn',__name__)
 
@@ -100,10 +106,10 @@ def scraping():
 	scrape_requested = True if request.args.get('scraping') == 'true' else False
 
 	#Dico de résultats pour l'affichage sur le site
-	search_res = geocoder.geonames(country,key='scrapelord',auth='Blorp86',maxRows=1)
+	search_res = geo.GeoQuery(country,country_code,'E')
 	dic_results = {'head': {'total': 0,
-							'country': {'name': country, 'lng': search_res[0].lng,
-										'lat': search_res[0].lat}},
+							'country': {'name': country, 'lng': search_res.result.lng,
+										'lat': search_res.result.lat}},
 				   'results': []}
 	#Liste de chargement pour la base de données
 	database_list = []
@@ -112,7 +118,7 @@ def scraping():
 		load_arg = {'img_url': 1, '_id': 0}
 	else: #On charge le document pour l'affichage
 		load_arg = {'scraped_title': 0, 'location_list': 0,
-					'feature_class': 0, '_id': 0}
+					'feature_class': 0, 'testers': 0, '_id': 0}
 
 	existing_urls = []
 	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
@@ -138,7 +144,7 @@ def scraping():
 			     password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
 		target_sub = reddit.subreddit('EarthPorn')
-		query = 'title:'+country
+		query = country
 		print('\033[92m'+target_sub.display_name+'\033[0m'
 			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
 
@@ -150,10 +156,11 @@ def scraping():
 			limit -= dic_results['head']['total']
 		else: #512 caractères max dans une requête Reddit
 			limit = 1000 #Max permis par Reddit
-			existing_urls = [url[5:] for url in existing_urls]
+
+		existing_urls = [url[5:] for url in existing_urls]
 
 		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
-		reddit_tagger = ttagger.TreeTagger(TAGLANG='en',TAGDIR=os.getcwd()+'/TreeTagger')
+		reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/TreeTagger')
 
 		#Résultats de la recherche dans le subreddit
 		test_posts = target_sub.search(query,limit=limit)
@@ -161,20 +168,20 @@ def scraping():
 		for post in test_posts:
 			try:
 				 attempt = post.url
-			except NotFound:
+			except prawcore.exceptions.NotFound:
 				continue #Problème avec la photo; éliminé
 
 			if post.url in existing_urls:
 				continue #Déjà stocké dans la base de données; éliminé
 
-			if re.search(country+'[.,/[( ]',post.title): #Pays suivi de '.' ',' '/' '[' '(' ou ' '
+			if search('\b'+country+'\b',post.title): #Pays comme mot distinct
 				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
-				res = re.search('^(?:[\[(].*[\])])?([^\[(]+)',post.title)
+				res = search('^(?:[\[(].*[\])])?([^\[(]+)',post.title)
 				if (res):
 					print(res.group(1))
 
 					#Tagging: génère une liste de triplets: (word=..., pos=..., lemma=...)
-					reddit_tags = ttagger.make_tags(reddit_tagger.tag_text(res.group(1)),
+					reddit_tags = make_tags(reddit_tagger.tag_text(res.group(1)),
 								  exclude_nottags=True)
 
 					#Le nom du pays est exclu des lieux potentiels; rajouté seulement en dernier recours
@@ -192,7 +199,7 @@ def scraping():
 							reddit_tags[index] = (tag[0],'NP0',tag[2])
 						if tag[0].casefold() == country.casefold() or index in indexes:
 							reddit_tags[index] = (tag[0],'CTY',tag[2])
-					pprint.pprint(reddit_tags)
+					pprint(reddit_tags)
 
 					#Recherche des lieux potentiels, avec stocké entre les lieux le nombre de mots non choisis
 					location_list = location_finder(country,rgnversion,reddit_tags)
@@ -201,7 +208,7 @@ def scraping():
 					print(location_list,'\n')
 
 					#Geonames
-					date = time.gmtime(post.created_utc)
+					date = gmtime(post.created_utc)
 					dic_mongo = {'link': 'https://www.reddit.com'+post.permalink,
 								 'img_url': post.url, 'search_version': rgnversion,
 								 'country': country, 'country_code': country_code,
@@ -214,7 +221,7 @@ def scraping():
 
 					try:
 						attempt = post.author.icon_img
-					except NotFound:
+					except prawcore.exceptions.NotFound:
 						pass
 					else:
 						dic_mongo['author'] = {'name': post.author.name, 'icon': post.author.icon_img,
@@ -237,8 +244,8 @@ def scraping():
 
 					if geo_res.result is not None:
 						dic_results['head']['total'] += 1
-						print('Résultat GeoNames: ',geo_res.result.address,end='')
-						print('. Après ',placefinder.counter,' requêtes.')
+						print('Résultat GeoNames:',geo_res.result.address,end='')
+						print('. Après',placefinder.counter,'requêtes.')
 
 						dic_mongo['name'] = geo_res.result.address	#Nom
 						dic_mongo['lng'] = geo_res.result.lng
@@ -248,7 +255,7 @@ def scraping():
 
 						dic_results['results'].append(dic_mongo)
 
-						dic_tostore = copy.deepcopy(dic_mongo)
+						dic_tostore = deepcopy(dic_mongo)
 						database_list.append(dic_tostore)
 
 						user_limit -= 1

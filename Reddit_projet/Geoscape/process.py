@@ -41,28 +41,6 @@ def select_results(version, url_list):
 
 
 
-def good_neighbors(bad_vector, all_vectors, is_correct):
-	"""Réuni les noms propres voisins du lieu choisi erroné dans la liste de résultats.
-	"""
-
-	f_idx = bad_vector[0][0] #Position dans all_vectors
-	l_idx = bad_vector[-1][0]
-	neighbors = [t[1] for t in bad_vector]
-	final_index = 0
-
-	#Ne pas vérifier x[2] == 'NP0' dans la λ-expression: privilégier le choix du testeur
-	for vect in takewhile(lambda x: x[0], all_vectors[:f_idx][::-1]):
-		neighbors.insert(0,vect)
-		final_index += 1
-
-	for vect in takewhile(lambda x: x[0], all_vectors[l_idx+1:]):
-		neighbors.append(vect)
-
-	return {'errpos': final_index, 'errlen': len(bad_vector), 'errlist': neighbors,
-			'errtype': is_correct}
-
-
-
 def create_rule():
 	"""Recherche d'erreurs et création de nouvelles règles à partir de celles-ci.
 	Récupère dans la base de données les résultats finaux des tests si le champ
@@ -94,34 +72,58 @@ def create_rule():
 					(t[0] for t in tags)))
 
 		bad_results = []
-		# 0-enum 1-(0-booléens test lieux 1-lieux potentiels 2-tags 3-mots)
-		for k, g in groupby(enumerate(comp_list), key = lambda x: x[1][0] != bool(x[1][1])):
-			if k:
-				for kk, gg in groupby(g, key = lambda x: x[1][0]):
-					vect = list(gg)
-					bad_results.append(good_neighbors(vect,comp_list,vect[0][1][0]))
-		
-		for result in bad_results:
-			errpos = result['errpos']
-			errlen = result['errlen']
-			rule_vect = result['errlist'][errpos:errpos+errlen]
-			take = 0 if result['errtype'] else 'X'
+		good_neighbors = []
+		err = []
+		i = 0
 
-			if len(result['errlist']) - errlen > 0:
-				take = 2 if result['errtype'] else 'X'
+		while i < length:
+			if comp_list[i][0] and comp_list[i][0] == bool(comp_list[i][1]):
+				good_neighbors.append(list(takewhile(lambda x: x[0], comp_list[i:])))
+				i += len(good_neighbors)
 
-				if errpos == len(result['errlist']) - 1:
-					rule_vect = result['errlist'][:errpos]
-					take = 1 if result['errtype'] else 'R'
+			if comp_list[i][0] != bool(comp_list[i][1]):
+				errpos = len(good_neighbors)
+				errtype = comp_list[i][0]
+				err = list(takewhile(lambda x:
+							x[0] != bool(x[1]) and x[0] == errtype, comp_list[i:]))
+				badlen = len(err)
+
+				err.extend(list(takewhile(lambda x: x[0], comp_list[i+badlen:])))
+				good_neighbors.extend(err)
+
+				bad_results.append({ 'errpos': errpos, 'errlen': badlen,
+									 'errlist': good_neighbors, 'errtype': errtype})
+				good_neighbors = []
+				err = []
+				i += badlen
+
+			else:
+				good_neighbors.clear()
+				i += 1
+
+		for res in bad_results:
+			errpos = res['errpos']
+			errlen = res['errlen']
+			errlist = res['errlist']
+			errtype = res['errtype']
+			rule_vect = errlist[errpos:errpos+errlen]
+			take = 0 if errtype else 'X'
+
+			if len(errlist) - errlen > 0:
+				take = 2 if errtype else 'X'
+
+				if errpos == len(errlist) - 1:
+					rule_vect = errlist[:errpos]
+					take = 1 if errtype else 'R'
+
 				elif errpos == 0:
-					rule_vect = result['errlist'][errpos+errlen:]
-					take = -1 if result['errtype'] else 'L'
+					rule_vect = errlist[errpos+errlen:]
+					take = -1 if errtype else 'L'
 
 			new_rule = {'country': doc['country'], 'expr': ' '.join(i[3] for i in rule_vect),
 						'pos': [i[2] for i in rule_vect], 'take': take,
 						'search_version': next_version, 'img_url': doc['img_url'],
 						'verified': False}
-			print(new_rule)
 			rule_list.append(new_rule)
 
 	if rule_list:
