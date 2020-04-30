@@ -31,8 +31,6 @@ app.secret_key='mysecret'
 @app.route('/map')
 @app.route('/map.html')
 def map():
-	if 'username' in session:
-		return render_template('map.html',username=session['username'])
 	return render_template('map.html')
 
 
@@ -62,21 +60,15 @@ def connexion():
 				#Cookies
 				session['username'] = compte['pseudo']
 				session['admin?'] = ( compte['admin?'] == "YES" )
-				if (session['admin?']):
-					return redirect(url_for('testeur'))  
-				else:
-					return redirect(url_for('map'))
+				return redirect(url_for('map'))
 					
 		#Pseudo,email ou mot de passe invalide
 		error = 'Le pseudo/email ou le mot de passe n\'est pas valide'
 		return render_template('connexion.html',error=error)
 			
 	elif 'username' in session:
-		if session['admin?']:
-			return redirect(url_for('testeur'))  
-		else:
-			return redirect(url_for('map'))
-
+		return redirect(url_for('map'))
+	
 	else:
 		return render_template('connexion.html')
 
@@ -124,19 +116,13 @@ def inscription():
 			documents = mongo.MongoSave([dic])
 			documents.storeindb('users_accounts',pseudo='A',email='A')
 
-			if (session['admin?']):
-				#Appel de la fonction qui crée le compte admin
-				return redirect(url_for('testeur')) 
-			else:
-				return redirect(url_for('map'))  
+			#redirection vers la map
+			return redirect(url_for('map'))  
 
 		return render_template('inscription.html',error=error)
 
 	elif 'username' in session:
-		if session['admin?']:
-			return redirect(url_for('testeur'))  
-		else:
-			return redirect(url_for('map'))
+		return redirect(url_for('map'))
 
 	else:
 		return render_template('inscription.html')
@@ -152,11 +138,10 @@ def deconnexion():
 @app.route('/get_session',methods=['GET'])
 def get_session():
 	
-	dic={'is_connected':False}
+	dic={}
 
 	if session:
 		dic={
-			'is_connected':True,
 			'username':session['username'],
 			'admin?':session['admin?']
 		}	
