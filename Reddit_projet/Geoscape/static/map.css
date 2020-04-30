@@ -1,9 +1,11 @@
+/********************************************************/
 body{
 	font-size: 16px;
 }
 h2{
 	font-size: 1.3em;
 }
+/********************************************************/
 .split {
 	height: 100%;
 	position: fixed;
@@ -16,23 +18,100 @@ h2{
 	left: 0;
 	background-color: #e6ffff;
 }
-#parametres{
-	margin-left: 4%;
-}
+
 .right {
 	right: 0;
 	width: 60%;
 	/*border-left: .7em outset gray;*/
 }
 
+/********************************************************/
+
+#parametres_profil{
+	width: 100%;
+}
+#parametres, #profil{
+	z-index: 1;
+	top: 0%;
+	position: fixed;
+}
+#parametres{
+	left: 2%;
+	width: 35%;
+}
+#profil{
+	float: left;
+	left: 30.3%;
+	margin-top: 1%;
+	margin-left: 3%;
+	cursor: pointer;
+	-webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+#icon_user{
+	color: #A9A9A9;
+	font-size: 230%;
+}
+
+/********************************************************/
+
+/*******************************************************/
+
+#menu_user{
+visibility: hidden;
+width: 160px;
+background-color: grey;
+color: #fff;
+text-align: center;
+border-radius: 6px;
+padding: 8px 0;
+position: absolute;
+z-index: 1;
+top: 110%;
+left: 50%;
+margin-left: -80px;
+}
+
+#menu_user::after {
+content: "";
+position: absolute;
+bottom: 100%;
+left: 50%;
+margin-left: -5px;
+border-width: 5px;
+border-style: solid;
+border-color: transparent transparent grey transparent;
+}
+
+#profil .show{
+visibility: visible;
+-webkit-animation: fadeIn 0.5s;
+animation: fadeIn 0.5s;
+}
+
+@-webkit-keyframes fadeIn {
+from {opacity: 0;} 
+to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+from {opacity: 0;}
+to {opacity:1 ;}
+}
+.button_user{
+	margin-top: 7%;
+}
+/******************************************************/
 #mapid{
 	height: 100%;
 	width: 100%;
 	margin: 0px;
 }
 #container{
-	position: relative;
-	top:3%;
+	position: absolute;
+	top: 25%;
 	width: 100%;
 	height: 100%;
 	/*border-top: .7em outset gray;*/
@@ -70,6 +149,8 @@ h2{
 #nameProfil:hover{
 	text-decoration: underline;
 }
+
+/********************************* Icons styling *********************************/
 .icoc_clickable{
 	font-size: 20px;
 	color: gray;
@@ -90,6 +171,7 @@ h2{
 	margin-left: 9.5%;
 	margin-top: -4%;
 }
+
 .icon{
 	font-size: 16px;
 	color: gray;
@@ -102,7 +184,7 @@ h2{
 }
 .icon_thumb{
 	font-size: 16px;
-	vertical-align:middle;
+	vertical-align:text-bottom;
 }
 .icon_feedback{
 	font-size: 19px;
@@ -122,13 +204,47 @@ h2{
 .icon_info:hover{
 	color:	#707070	;
 }
+.send_icon{
+	font-size: 16px;
+	color:#2f55a4;
+	vertical-align:middle;
+}
 #text{
 	margin: 4%;
 	margin-right: 7%;
 	margin-top: 0%;
 }
 button{
+	/*border: 3px #4095c6 solid;*/
+	border: none;
 	cursor: pointer;
+	display:inline-block;
+	padding:0.3em 1.2em;
+	margin:0 0.3em 0.3em 0;
+	border-radius:1.5em;
+	box-sizing: border-box;
+	font-family:'Roboto',sans-serif;
+	font-weight:300;
+	color:#FFFFFF;
+	background-color:#A9A9A9;/*#4eb5f1#60b1e0#4095c6*/
+	text-align:center;
+	transition: color  0.4s , background-color 0.4s;
+}
+button:hover{
+	background-color:gray;
+}
+.button_user:hover{
+	color:gray;
+	background-color:#FFFFFF;
+}
+button:focus{
+	outline:0;
+}
+@media all and (max-width:30em){
+	button{
+	display:block;
+	margin:0.2em auto;
+	}
 }
 #report{
 	border-top:gray 1px solid  ;
@@ -148,6 +264,13 @@ button{
 	width: 800px;
 }
 
+.label{
+	cursor: pointer;
+	border-bottom: 4px solid yellow;
+}
+.checkbox{
+	display: none;
+}
 
 /************ loading animation ************/
 #animation{
