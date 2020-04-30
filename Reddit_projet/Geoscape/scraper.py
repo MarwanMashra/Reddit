@@ -112,7 +112,7 @@ def scraping():
 		load_arg = {'img_url': 1, '_id': 0}
 	else: #On charge le document pour l'affichage
 		load_arg = {'scraped_title': 0, 'location_list': 0,
-					'feature_class': 0, '_id': 0}
+			'testers': 0,'feature_class': 0, '_id': 0}
 
 	existing_urls = []
 	check_db = mongo.Mongo.mongocheck('Resultats_RGN')
