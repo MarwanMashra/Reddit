@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
+import sys
 from copy import deepcopy
 from itertools import groupby
-from os import getcwd
+from os import getcwd, name
 from pprint import pprint
 from re import search
 from time import gmtime
@@ -159,8 +160,13 @@ def scraping():
 
 		existing_urls = [url[5:] for url in existing_urls]
 
-		#Config TreeTagger. Le dossier TreeTagger doit être dans le même dossier que ce script
-		reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/TreeTagger')
+		#Config TreeTagger. Le dossier Treetagger doit être dans le dossier d'où le programme est exécuté
+		if sys.platform.startswith('linux'):
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_unix/')
+		elif sys.platform.startswith('win32'):
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_windows/')
+		else:
+			sys.exit('Système d\'exploitation non compatible avec Geoscape.')
 
 		#Résultats de la recherche dans le subreddit
 		test_posts = target_sub.search(query,limit=limit)
