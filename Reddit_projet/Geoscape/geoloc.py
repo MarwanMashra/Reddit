@@ -44,28 +44,25 @@ class LocationList(Sequence):
 
 		if not self.__naturalset.isdisjoint(self.__manmadeset):
 			self.__naturalset -= self.__manmadeset
+
 		if len(self.__manmadeset) + len(self.__naturalset) < len(FEATURE_CLASSES):
 			for fcl in FEATURE_CLASSES:
 				if fcl not in self.__manmadeset | self.__naturalset:
 					self.__manmadeset.add(fcl)
 
-		if not self.__manmadeset:
-			raise PartitionError('manmade')
-		if not self.__naturalset:
-			raise PartitionError('natural')
-
 	def __len__(self):
 		return len(self.__locations)
 
-	def __getitem__(self, key):
-		return self.__locations[key]
+	def __getitem__(self, index):
+		return self.__locations[index]
 
 	def __repr__(self):
 		return ('locations.LocationList('+self.country_code
 			   +',['+','.join(str(loc) for loc in self.__locations)+'])')
 
 	def __str__(self):
-		return '['+', '.join(self.__locations)+']'
+		return ('['+', '.join(self.__locations)+']'
+			   +'\nPartition: '+str(self.__manmadeset)+', '+str(self.__naturalset))
 
 	#Méthodes héritées: __contains__, __iter__, count, index
 
@@ -83,14 +80,10 @@ class LocationList(Sequence):
 	def add_natural(self, *f_classes):
 		self.__naturalset |= set(f_classes)
 		self.__manmadeset -= self.__naturalset
-		if not self.__manmadeset:
-			raise PartitionError('manmade')
 
 	def add_manmade(self, *f_classes):
 		self.__manmadeset |= set(f_classes)
 		self.__naturalset -= self.__manmadeset
-		if not self.__naturalset:
-			raise PartitionError('natural')
 
 	def set_fuzzy(self, fuzzy):
 		self.fuzzy = fuzzy
@@ -100,6 +93,7 @@ class LocationList(Sequence):
 
 		if not search_order:
 			return None
+
 		if not self.__locations:
 			dummy = GeoQuery.__new__(GeoQuery)
 			setattr(dummy,'location',None)
@@ -109,6 +103,7 @@ class LocationList(Sequence):
 		for search in search_order:
 			if search not in SEARCH_TYPES:
 				raise GeoError(search)
+
 			for loc in self.__locations:
 				self.counter += 1
 				search_res = GeoQuery(loc,self.country_code,search,self.__manmadeset,
@@ -127,6 +122,7 @@ class GeoQuery:
 			raise TypeError(typerr_msg)
 		if searchtype not in SEARCH_TYPES:
 			raise GeoError(searchtype)
+
 		extra_args = {'fuzzy': fuzzy} if searchtype == 'RF' else {}
 		rows = max_return if max_return is not None else 1
 
@@ -166,10 +162,3 @@ class GeoQuery:
 class GeoError(Exception):
 	def __init__(self, string):
 		super().__init__('\''+string+'\''+' '+'n\'est pas un type de recherche valide')
-
-
-
-class PartitionError(Exception):
-	def __init__(self, string):
-		super().__init__('l\'ensemble humain est vide' if string=='manmade'
-					else 'l\'ensemble naturel est vide')

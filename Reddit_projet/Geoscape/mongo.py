@@ -36,11 +36,9 @@ class Mongo:
 		"""
 		coll = client[coll_tocheck]
 		for idx in coll.list_indexes():
-			idx = idx.to_dict()	#SON->dictionnaire
-			arg_compare = sum(1 if name in index else -1
-							for name in idx['key'].keys())
-			if arg_compare == len(index):
-		 		return True
+			idx = idx.to_dict()		#SON -> dictionnaire
+			if all(name in index for name in idx['key'].keys()):
+				return True
 		return False
 
 	@classmethod
@@ -53,6 +51,7 @@ class Mongo:
 		coll = client[coll_toindex]
 		if len(index) > 0 and cls.indexcheck(coll_toindex,list(index.keys())):
 			return
+
 		index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
 					  for key, val in index.items()]
 		if index_list:
@@ -88,6 +87,7 @@ class MongoSave(Mongo):
 	def storeindb(self,coll_tostore,**index):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
+
 		coll = client[coll_tostore]
 		if not self.indexcheck(coll_tostore,list(index.keys())):
 			index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
@@ -95,6 +95,7 @@ class MongoSave(Mongo):
 			if index_list:
 				index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 				coll.create_index(index_list,name=index_name,unique=True)
+
 		try:
 			coll.insert_many(self.document,ordered=False)
 		except pymongo.errors.BulkWriteError as error:
@@ -103,7 +104,7 @@ class MongoSave(Mongo):
 					print('Document '+str(e['op']['_id'])+' déjà présent dans la collection '
 						+coll.name+' de la base de données.')
 				else:
-					sys.exit('Erreur lors de l\'écriture: '+e['errmsg'])
+					raise
 		else:
 			pass
 

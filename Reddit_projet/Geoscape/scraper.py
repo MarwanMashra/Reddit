@@ -132,7 +132,7 @@ def scraping():
 	#Les documents pris dans la base de données sont chargés dans le dictionnaire de résultats
 	else:
 		dbfinder = mongo.MongoLoad({'search_version': rgnversion, 'country': country},load_arg)
-		for doc in dbfinder.retrieve('Resultats_RGN'):
+		for doc in dbfinder.retrieve('Resultats_RGN',limit=limit):
 			if not scrape_requested:
 				dic_results['head']['total'] += 1
 				dic_results['results'].append(doc)
@@ -144,9 +144,9 @@ def scraping():
 			     password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
 
 		target_sub = reddit.subreddit('EarthPorn')
-		query = country
+		query = country if country != 'United States' else 'USA'
 		print('\033[92m'+target_sub.display_name+'\033[0m'
-			  '\nRésultats de recherche pour les soumissions reddit avec: ',query,'\n')
+			  '\nRésultats de recherche pour les soumissions reddit avec:',query,'\n')
 
 		#Exclure les documents déjà récupérés
 		user_limit = limit
@@ -174,7 +174,7 @@ def scraping():
 			if post.url in existing_urls:
 				continue #Déjà stocké dans la base de données; éliminé
 
-			if search('\b'+country+'\b',post.title): #Pays comme mot distinct
+			if search('\W'+country+'\W',post.title): #Pays comme mot distinct
 				#Saute aux plus une fois des caractères entre [] ou () au début du texte et s'arrête au premier [ ou (
 				res = search('^(?:[\[(].*[\])])?([^\[(]+)',post.title)
 				if (res):

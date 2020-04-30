@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import json, random
+import json
+from math import floor, log2
+from random import sample, seed
+
+from flask import Blueprint, jsonify, request, session
+
 import Geoscape.mongo as mongo
 import Geoscape.process as proc
-from flask import Blueprint, jsonify, request, session
-from math import floor, log2
 
 mdb = Blueprint('mdb',__name__)
 
@@ -70,8 +73,8 @@ def report():
 
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = list(dbfinder.retrieve('Testeurs'))
-		random.seed()
-		tester_sum = sum(2**t['code'] for t in random.sample(tester_list,3)) #Sélection aléatoire dans la liste
+		seed()
+		tester_sum = sum(2**t['code'] for t in sample(tester_list,3)) #Sélection aléatoire dans la liste
 		bytesize = floor(log2(tester_sum)/8 if tester_sum else 0) + 1 #log2(0) non défini
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		
