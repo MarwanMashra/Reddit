@@ -106,6 +106,8 @@ $(document).ready(function(){
 	//en cliquant sur le bouton
 	$("#submit").click(function(){
 		var valeur= $("#select_input").val();   //récupérer la valeur de l'input pays dans le format France,FR
+		var scraping=  $("input[id='scraping_input']").is(':checked');
+		$("#scraping_input").prop("checked", false);
 		if( valeur == "" ){
 			$("#error").show();
 		}
@@ -125,7 +127,7 @@ $(document).ready(function(){
 					country:pays[0],
 					country_code:pays[1],
 					search_version: search_version,
-					scraping: $("input[id='scraping_input']").is(':checked'),
+					scraping: scraping,
 					nombre_image: parseInt($("#nombre_image").val())
 				},
 				beforeSend:startAnimation ,
@@ -228,7 +230,7 @@ $(document).ready(function(){
 			image['lng'] nous donne la longitude
 			image['alt'] nous donne la laltitude 
 			image['img_url'] nous donne l'url de l'image 
-			image['url'] nous donne l'url de la post (la publication sur reddit)
+			image['link'] nous donne l'url de la post (la publication sur reddit)
 			image['date'] nous donne la date de l'image tel que:
 				image['date']['year']   nous donne l'annÃ©e 
 				image['date']['month']  nous donne le mois 
@@ -251,7 +253,7 @@ $(document).ready(function(){
 		html+='<a title="Voir le profil" style="text-decoration : none" href="'+image['author']['profile']+'" target="_blank">';
 		html+= '<span id="nameProfil">'+image['author']['name']+'</span></a>';
 		html+= '<a href="'+image['img_url']+'" title="Voir en plein d\'écran " target="_blank"><i class="material-icons icoc_clickable">aspect_ratio</i></a>';
-		html+= '<a href="'+image['url']+'" title="Voir dans le site original" target="_blank"><i class="material-icons launch icoc_clickable">launch</i></a>';
+		html+= '<a href="'+image['link']+'" title="Voir dans le site original" target="_blank"><i class="material-icons launch icoc_clickable">launch</i></a>';
 		html+= '</p>';
 		html+='<p id="second_line">';
 		html+= '<i class="material-icons icon">location_on</i>';
