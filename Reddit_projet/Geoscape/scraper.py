@@ -166,7 +166,9 @@ def scraping():
 		if sys.platform.startswith('linux'):
 			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_unix/')
 		elif sys.platform.startswith('win32'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_windows/')
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_win32/')
+		elif sys.platform.startswith('win64'):
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_win64/')
 		else:
 			sys.exit('Système d\'exploitation non compatible avec Geoscape.')
 

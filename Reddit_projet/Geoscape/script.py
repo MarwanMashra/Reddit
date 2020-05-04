@@ -25,8 +25,6 @@ def db_tester(username):
 
 
 
-app.secret_key='mysecret'
-
 @app.route('/')
 @app.route('/map')
 @app.route('/map.html')

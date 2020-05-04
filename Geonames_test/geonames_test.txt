@@ -5,7 +5,7 @@ France, Corsica, FR, Bon: Corse L Corsica A, Accep: Corsica (Roman Province) A, 
 France, Montriond, FR, Bon: Montriond A P, Accep: Montriond H
 France, Haute Savoie, FR, Bon: Upper Savoy A
 France, Roc d'Enfer, FR, Bon: Roc d'Enfer T
-France, Rhône-Alpes, FR, Bon: Rhône-Alpes A, Accep: Lyon P
+France, Rhône-Alpes, FR, Bon: Rhône-Alpes A Accep: Lyon P
 Armenia, Ararat, AM, Bon: aucun résultat (le mont Ararat est en Turquie)
 Armenia, Mount Ararat, AM, Bon: aucun résultat
 Armenia, Gegham, AM, Bon: Geghmaghan T

@@ -121,6 +121,12 @@ then
     echo 'French parameter file installed.'
 fi
 
+if [ -r french-spoken.par.gz ]
+then
+    gzip -cd french-spoken.par.gz > lib/french-spoken.par
+    echo 'Spoken French parameter file installed.'
+fi
+
 if [ -r old-french.par.gz ]
 then
     gzip -cd old-french.par.gz > lib/old-french.par
@@ -411,6 +417,12 @@ if [ -r french.par ]
 then
     mv french.par lib/french.par
     echo 'French parameter file installed.'
+fi
+
+if [ -r french-spoken.par ]
+then
+    mv french-spoken.par lib/french-spoken.par
+    echo 'Spoken French parameter file installed.'
 fi
 
 if [ -r old-french.par ]
