@@ -5,6 +5,7 @@ body{
 h2{
 	font-size: 1.3em;
 }
+
 /********************************************************/
 .split {
 	height: 100%;
@@ -14,14 +15,14 @@ h2{
 }
   
 .left {
-	width: 40%;
+	width: 43%;
 	left: 0;
 	background-color: #e6ffff;
 }
 
 .right {
 	right: 0;
-	width: 60%;
+	width: 57%;
 	/*border-left: .7em outset gray;*/
 }
 
@@ -41,7 +42,7 @@ h2{
 }
 #profil{
 	float: left;
-	left: 30.3%;
+	left: 33%;
 	margin-top: 1%;
 	margin-left: 3%;
 	cursor: pointer;
@@ -68,7 +69,7 @@ text-align: center;
 border-radius: 6px;
 padding: 8px 0;
 position: absolute;
-z-index: 1;
+z-index: 3;
 top: 110%;
 left: 50%;
 margin-left: -80px;
@@ -136,8 +137,8 @@ to {opacity:1 ;}
 	width: 45px;
 	height: 45px;
 	border-radius: 50%;
-	padding-left: 3%;
-	padding-right: 2%;
+	margin-left: 4%;
+	margin-right: 2%;
 	vertical-align:middle ;
 }
 #nameProfil{
@@ -155,11 +156,11 @@ to {opacity:1 ;}
 	font-size: 20px;
 	color: gray;
 	position: absolute;
-	right: 15%;
+	right: 14%;
 	cursor: pointer;
 }
 .launch{
-	right: 9%;
+	right: 8%;
 }
 .launch:hover{
 	content:"salut";
@@ -210,7 +211,8 @@ to {opacity:1 ;}
 	vertical-align:middle;
 }
 #text{
-	margin: 4%;
+	margin-left: 5%;
+	margin-bottom: 4%;
 	margin-right: 7%;
 	margin-top: 0%;
 }
@@ -249,7 +251,7 @@ button:focus{
 #report{
 	border-top:gray 1px solid  ;
 	position: absolute;
-	margin-left: 4%;
+	margin-left: 5%;
 	/*bottom: 13em;*/
 	/*bottom: 27.5%;*/
 	bottom: 195px;
