@@ -2,7 +2,8 @@
 #-*- coding: utf-8 -*-
 
 import dns, pymongo, sys
-from Geoscape.db_init import client
+
+from Geoscape.db_init import mongo_access as db
 
 
 
@@ -25,7 +26,7 @@ class Mongo:
 	def mongocheck(cls,coll_exists):
 		"""Vérifie l'existence d'une collection.
 		"""
-		return coll_exists in client.list_collection_names()
+		return coll_exists in db.client.list_collection_names()
 
 	@classmethod
 	def indexcheck(cls,coll_tocheck,index):
@@ -34,7 +35,7 @@ class Mongo:
 		Retour de list_indexes(): itérateur sur des documents au format SON (dictionnaire
 		ordonné). Convertir en dico Python avant utilisation.
 		"""
-		coll = client[coll_tocheck]
+		coll = db.client[coll_tocheck]
 		for idx in coll.list_indexes():
 			idx = idx.to_dict()		#SON -> dictionnaire
 			if all(name in index for name in idx['key'].keys()):
@@ -48,7 +49,7 @@ class Mongo:
 		passé à la fonction comme dictionnaire, puis converti en liste de tuples pour le
 		passage à la méthode de pymongo.collections.
 		"""
-		coll = client[coll_toindex]
+		coll = db.client[coll_toindex]
 		if len(index) > 0 and cls.indexcheck(coll_toindex,list(index.keys())):
 			return
 
@@ -63,7 +64,7 @@ class Mongo:
 		"""Compte et renvoit le nombre de documents dans une collection.
 		'query' est une requête pour filtrer les documents devant être comptés.
 		"""
-		coll = client[coll_tocount]
+		coll = db.client[coll_tocount]
 		return coll.count_documents(query)
 
 
@@ -88,7 +89,7 @@ class MongoSave(Mongo):
 		if len(self.document) == 0: #Une liste vide passée à insert_many provoque un bug
 			return
 
-		coll = client[coll_tostore]
+		coll = db.client[coll_tostore]
 		if not self.indexcheck(coll_tostore,list(index.keys())):
 			index_list = [(key,pymongo.ASCENDING) if val == 'A' else (key,pymongo.DESCENDING)
 						 for key, val in index.items()]
@@ -150,7 +151,7 @@ class MongoLoad(Mongo):
 		self.projection = proj
 
 	def retrieve(self,coll_tosearch,limit=0):
-		coll = client[coll_tosearch]
+		coll = db.client[coll_tosearch]
 		if not self.projection and limit == 0:
 			return coll.find(self.query)
 		elif not self.projection:
@@ -163,7 +164,7 @@ class MongoLoad(Mongo):
 	def dltdocument(self,coll_toupd):
 		"""Efface un ou plusieurs documents correspondants à la requête.
 		"""
-		coll = client[coll_toupd]
+		coll = db.client[coll_toupd]
 		return coll.delete_many(self.query).deleted_count
 
 
@@ -201,14 +202,14 @@ class MongoUpd(Mongo):
 		"""Mise à jour groupée: plusieurs documents reçoivent la même mise à jour,
 		c'est-à-dire un même champ est mis à jour avec la même valeur pour tous.
 		"""
-		coll = client[coll_toupd]
+		coll = db.client[coll_toupd]
 		coll.update_many(self.query,self.update)
 
 	def multval_upd(self,coll_toupd,multfield):
 		"""Mise à jour individualisée: pour le même champ, chaque document reçoit
 		une valeur propre. Le paramètre multfield désigne ce champ individualisé.
 		"""
-		coll = client[coll_toupd]
+		coll = db.client[coll_toupd]
 		assert self.list_id and self.list_val,'Listes manquantes pour la méthode de mise à jour.'
 		for ident, value in zip(self.list_id,self.list_val):
 			self.query[multfield] = ident

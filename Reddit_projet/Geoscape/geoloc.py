@@ -20,7 +20,7 @@ from geocoder import geonames
 
 
 
-SEARCH_TYPES = ['E', 'EN', 'EH', 'EN EH', 'EH EN', 'RF', 'R']
+SEARCH_TYPES = ['E', 'EH', 'EN', 'EH EN', 'EN EH', 'RIH', 'RIN', 'RF', 'R']
 FEATURE_CLASSES = ['A','H','L','P','R','S','T','U','V']
 EH_STANDARD = ['A','P','R','S']
 EN_STANDARD = ['H','L','T','U','V']
@@ -32,7 +32,7 @@ typerr_msg = 'country code must be a string'
 
 class LocationList(Sequence):
 	def __init__(self, code, loclist, mset=EH_STANDARD, nset=EN_STANDARD, fuzzy=FUZ_STANDARD):
-		self.__locations = [loc for loc in loclist if type(loc) == str]
+		self.__locations = tuple(loc for loc in loclist if type(loc) == str)
 		self.__manmadeset = set(mset)
 		self.__naturalset = set(nset)
 		self.fuzzy = fuzzy
@@ -69,26 +69,33 @@ class LocationList(Sequence):
 	#Pas de __setitem__
 	#Pas de __delitem__
 
+	@property
+	def EH(self):
+		return self.__manmadeset
+
+	@property
+	def EN(self):
+		return self.__naturalset
+
+	#Ne pas utiliser décorateur .setter, sinon permet de modifier l'ensemble sans contrôle
+
+	def addEH(self, *f_classes):
+		self.__manmadeset |= set(f_classes)
+		self.__naturalset -= self.__manmadeset
+
+	def addEN(self, *f_classes):
+		self.__naturalset |= set(f_classes)
+		self.__manmadeset -= self.__naturalset
+
 	def reinit(self, code, loclist):
-		self.__locations = [loc for loc in loclist if type(loc) == str]
+		self.__locations = tuple(loc for loc in loclist if type(loc) == str)
 
 		self.country_code = code
 		if type(self.country_code) != str:
 			raise TypeError(typerr_msg)
 		self.counter = 0
 
-	def add_natural(self, *f_classes):
-		self.__naturalset |= set(f_classes)
-		self.__manmadeset -= self.__naturalset
-
-	def add_manmade(self, *f_classes):
-		self.__manmadeset |= set(f_classes)
-		self.__naturalset -= self.__manmadeset
-
-	def set_fuzzy(self, fuzzy):
-		self.fuzzy = fuzzy
-
-	def geo_search(self, *search_order):
+	def geo_search(self, geokey, geoauth, *search_order):
 		self.counter = 0
 
 		if not search_order:
@@ -106,7 +113,7 @@ class LocationList(Sequence):
 
 			for loc in self.__locations:
 				self.counter += 1
-				search_res = GeoQuery(loc,self.country_code,search,self.__manmadeset,
+				search_res = GeoQuery(geokey,geoauth,loc,self.country_code,search,self.__manmadeset,
 									self.__naturalset,self.fuzzy)	#Objet résultat
 				if search_res.result is not None:
 					return search_res
@@ -114,8 +121,8 @@ class LocationList(Sequence):
 
 
 class GeoQuery:
-	def __init__(self, loc, code, searchtype='R', mset=EH_STANDARD, nset=EN_STANDARD, \
-			fuzzy=FUZ_STANDARD, max_return=None):
+	def __init__(self, geokey, geoauth, loc, code, searchtype='R', mset=EH_STANDARD, \
+			nset=EN_STANDARD, fuzzy=FUZ_STANDARD, max_return=None):
 		self.location = loc
 
 		if type(code) != str: 
@@ -131,7 +138,7 @@ class GeoQuery:
 			if max_return is None:
 				rows = 10
 
-		search_res = geonames(loc,key='scrapelord',auth='Blorp86',country=code,
+		search_res = geonames(loc,key=geokey,auth=geoauth,country=code,
 							maxRows=rows,**extra_args)
 
 		if search_res.status_code == 200:
@@ -139,14 +146,24 @@ class GeoQuery:
 				if searchtype in ['R','RF','E']:
 					self.result = search_res[0]
 					return
-				elif searchtype in ['EH EN', 'EH']:
+
+				if searchtype in ['EH EN','EH','RIH']:
 					fcl = mset
 				else:
 					fcl = nset
+
+				if searchtype in ['RIH','RIN']:
+					if search_res[0].feature_class in fcl and loc in search_res[0].address:
+						self.result = search_res[0]
+					else:
+						self.result = None
+					return
+
 				for res in search_res:
 					if res.feature_class in fcl:
 						self.result = res
 						return
+
 				if searchtype in ['EH EN','EN EH']:
 					self.result = search_res[0]
 				else:

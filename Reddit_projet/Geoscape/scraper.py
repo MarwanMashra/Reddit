@@ -10,13 +10,12 @@ from re import search
 from time import gmtime
 
 import praw, prawcore
-from flask import Blueprint, jsonify, request
+from flask import current_app, Blueprint, jsonify, request
 from more_itertools import windowed
 from treetaggerwrapper import TreeTagger, make_tags
 
 import Geoscape.geoloc as geo
 import Geoscape.mongo as mongo
-import Geoscape.process as proc
 
 rgn = Blueprint('rgn',__name__)
 
@@ -99,6 +98,10 @@ def scraping():
 	NB: le scraping tente toujours d'obtenir de nouvelles photos (absentes de mongoDB).
 	"""
 
+	#Configuration Geoscape
+	geokey = current_app.config['GEOKEY']
+	geoauth = current_app.config['GEOAUTH']
+
 	#Paramètres de la requête Javascript
 	rgnversion = request.args.get('search_version')
 	country = request.args.get('country')
@@ -107,7 +110,7 @@ def scraping():
 	scrape_requested = True if request.args.get('scraping') == 'true' else False
 
 	#Dico de résultats pour l'affichage sur le site
-	search_res = geo.GeoQuery(country,country_code,'E')
+	search_res = geo.GeoQuery(geokey,geoauth,country,country_code,'E')
 	dic_results = {'head': {'total': 0,
 							'country': {'name': country, 'lng': search_res.result.lng,
 										'lat': search_res.result.lat}},
@@ -140,9 +143,8 @@ def scraping():
 			existing_urls.append('-url:'+doc['img_url'])
 
 	if scrape_requested or dic_results['head']['total'] < limit:
-		#Configuration recherche reddit
-		reddit = praw.Reddit(client_id='v7xiCUUDI3vEmg',client_secret='5Q6FHHJT-SW0YRnEmtWkekWsxHU',
-			     password='Blorp86',user_agent='PhotoScraper',username='scrapelord')
+		#Configuration recherche reddit, profil chargé depuis praw.ini
+		reddit = praw.Reddit('current_user')
 
 		target_sub = reddit.subreddit('EarthPorn')
 		query = country if country != 'United States' else 'USA'
@@ -241,12 +243,12 @@ def scraping():
 					"""
 
 					placefinder = geo.LocationList(country_code,location_list)
-					geo_res = placefinder.geo_search('EN EH','R','RF')	#Objet GeoQuery
+					geo_res = placefinder.geo_search(geokey,geoauth,'EN EH','R','RF')	#Objet GeoQuery
 
 					#En dernier recours, le pays lui-même s'il est dans le titre
 					if geo_res.result is None and country in res.group(1):
 						placefinder.reinit(country_code,[country])
-						geo_res = placefinder.geo_search('E')
+						geo_res = placefinder.geo_search(geokey,geoauth,'E')
 
 					if geo_res.result is not None:
 						dic_results['head']['total'] += 1
