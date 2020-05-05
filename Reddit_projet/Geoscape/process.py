@@ -76,7 +76,7 @@ def create_rule():
 		err = []
 		i = 0
 
-		while i < length:
+		while i < len(comp_list):
 			if comp_list[i][0] and comp_list[i][0] == bool(comp_list[i][1]):
 				good_neighbors.append(list(takewhile(lambda x: x[0], comp_list[i:])))
 				i += len(good_neighbors)
