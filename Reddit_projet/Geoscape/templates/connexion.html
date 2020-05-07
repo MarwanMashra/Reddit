@@ -34,7 +34,8 @@
 
             
                               <button class="btn btn-info" type="submit" form="formId" value="Submit">Se connecter</button>
-                              <span id="url_connexion">Ou <a href="{{ url_for('inscription') }}">inscrivez-vous</a></span>
+                              <a class="btn btn-info" href="{{ url_for('inscription') }}">Inscription</a>
+                              <a class="btn btn-info" href="{{ url_for('map') }}">Aller sur la carte</a>
                               {% if error %}
                                  <br><span id="error_message">*{{ error }}</span>
                               {% endif %}
