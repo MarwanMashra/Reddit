@@ -99,7 +99,7 @@ $(document).ready(function(){
 	}
 
 	function choiceUser(){
-		var html='<p class="question_phrase">Lieu proposé par l\'utilisateur:</p><p>'+concateListe(image['test_list'])+'</p>';
+		var html='<p class="question_phrase">Lieu proposé par l\'utilisateur:</p><p>'+concateListe(image['test_list'],false,true)+'</p>';
 
 		return html;
 	}
@@ -107,6 +107,8 @@ $(document).ready(function(){
 	function createForm(){
 		
 		image=data['results'][index];
+		console.log(image);
+		
 		//créer le formulaire
 		var form='';             
 		form+= '<div id="testForm" class="test">';
@@ -193,8 +195,8 @@ $(document).ready(function(){
 			url:"/get_results_geonames",
 			datatype: "json",
 			data:{    
-				location: concateListe(valuesCheckbox),
-				country: image['country']
+				location: concateListe(valuesCheckbox,true,false),
+				country: image['country_code']
 			},
 			beforeSend:startAnimation,
 			success: createSeceondFormSuite,
@@ -207,7 +209,7 @@ $(document).ready(function(){
 	
 		var html= '<div id="contenuTest">';
 		html+= '<p class="question_phrase">Vous avez choisi le lieu suivant :</p>'
-		html+= concateListe(valuesCheckbox);
+		html+= concateListe(valuesCheckbox,true,true);
 		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir la plus proche (ou Aucun) :</p>';
 		html+= genRadio(list_locations);
 		html+= '<br>'+genkeywords();
@@ -275,9 +277,11 @@ $(document).ready(function(){
  
 	function getValuesCheckbox(){
 		valuesCheckbox=[];      //liste de tous les mots choisis
-
+		var i;
 		$.each( $("input[class='checkbox']:checked") , function(){
-			valuesCheckbox.push($(this).val());         //remplir la liste avec les mots mots 
+			id = $(this).prop("id");
+			i = parseInt(id.substring(8));
+			valuesCheckbox.push([i,$(this).val()]);         //remplir la liste avec les mots mots 
 		});
 	}
 
@@ -306,12 +310,43 @@ $(document).ready(function(){
 		
 	}
 
-	function concateListe(liste){
+	function concateListe(liste,hasIndex,affichage){
 		var str="";
-		$.each(liste,function(i,mot){
-			str+=mot+" ";	
-		});
+		if(hasIndex){
+			$.each(liste,function(i,mot){
+				if((i<liste.length-1 && liste[i][0]==liste[i+1][0]-1) || (i==liste.length-1)){
+					str+=mot[1]+" ";	
+				}
+				else{
+					if(affichage){
+						str+=mot[1]+", ";
+					}
+					else{
+						str+=mot[1]+",";
+					}
+				}
+				
+			});
+		}
+		else{
+			$.each(liste,function(i,mot){
+				str+=mot+" ";	
+			});
+		}
 		return str.substring(0, str.length - 1);
+	}
+
+	function genRadio(list_locations){
+		var html="";
+		$.each(list_locations,function(i,location){
+			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location+'">';
+			html+=  '<label for="location'+i+'"> '+location+'</label><br>';
+		});
+
+		html+= '<input type="radio" id="Aucun" name="location" value="None" checked>';
+		html+= '<label for="Aucun">Aucun</label>';
+
+		return html;
 	}
 
 	function genRadio(list_locations){
