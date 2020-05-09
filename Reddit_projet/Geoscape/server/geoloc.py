@@ -57,12 +57,14 @@ class LocationList(Sequence):
 		return self.__locations[index]
 
 	def __repr__(self):
-		return ('locations.LocationList('+self.country_code
-			   +',['+','.join(str(loc) for loc in self.__locations)+'])')
+		return ('locations.LocationList '
+				f'country_code={self.country_code!r}, __locations={self.__locations}, '
+				f'__manmadeset={self.__manmadeset}, __naturalset={self.__naturalset}, '
+				f'fuzzy={self.fuzzy}')
+		#!r utilise le formatage __repr__ par défaut sur country_code (rajoute les '')
 
 	def __str__(self):
-		return ('['+', '.join(self.__locations)+']'
-			   +'\nPartition: '+str(self.__manmadeset)+', '+str(self.__naturalset))
+		return str(self.__locations)
 
 	#Méthodes héritées: __contains__, __iter__, count, index
 

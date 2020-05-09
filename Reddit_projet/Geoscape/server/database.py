@@ -7,8 +7,8 @@ from random import sample, seed
 
 from flask import Blueprint, jsonify, request, session
 
-import Geoscape.mongo as mongo
-import Geoscape.process as proc
+import Geoscape.server.mongo as mongo
+import Geoscape.server.process as proc
 
 mdb = Blueprint('mdb',__name__)
 

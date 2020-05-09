@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import Geoscape.mongo as mongo
+import Geoscape.server.mongo as mongo
 from itertools import chain, groupby, takewhile
 from more_itertools import bucket
 

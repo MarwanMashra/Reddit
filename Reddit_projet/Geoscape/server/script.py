@@ -3,7 +3,7 @@
 
 from Geoscape import app
 import json, sys, bcrypt, urllib
-import Geoscape.mongo as mongo
+import Geoscape.server.mongo as mongo
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 
 

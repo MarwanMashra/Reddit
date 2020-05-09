@@ -7,8 +7,8 @@ from os import getcwd
 from flask import Flask
 
 #On importe ces fichiers pour enregistrer leurs @....routes()
-from Geoscape.scraper import rgn
-from Geoscape.database import mdb
+from Geoscape.server.scraper import rgn
+from Geoscape.server.database import mdb
 
 
 
@@ -34,4 +34,4 @@ app.register_blueprint(mdb)
 if __name__ == '__main__' :
 	app.run(debug=True,port=5000)
 
-import Geoscape.script
+import Geoscape.server.script

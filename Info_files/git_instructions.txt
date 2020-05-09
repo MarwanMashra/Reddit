@@ -24,6 +24,9 @@ git push origin master
 git push origin <nome_de_branche>:master
 	La branche personnelle push sur le master à titre exceptionnel.
 
+git add -u
+	Ajouter tous les fichiers suivis, et effacer ceux qui ont été effacés (manuellement).
+
 git reset
 	Annuler les derniers ajouts ("add"). git reset <fichier> pour annuler l'ajout d'un fichier en particulier.
 

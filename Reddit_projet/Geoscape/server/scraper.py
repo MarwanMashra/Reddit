@@ -14,8 +14,8 @@ from flask import current_app, Blueprint, jsonify, request
 from more_itertools import windowed
 from treetaggerwrapper import TreeTagger, make_tags
 
-import Geoscape.geoloc as geo
-import Geoscape.mongo as mongo
+import Geoscape.server.geoloc as geo
+import Geoscape.server.mongo as mongo
 
 rgn = Blueprint('rgn',__name__)
 
