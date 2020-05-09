@@ -5,9 +5,10 @@ import json
 from math import floor, log2
 from random import sample, seed
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 import Geoscape.server.mongo as mongo
+import Geoscape.server.geoloc as geo
 import Geoscape.server.process as proc
 
 mdb = Blueprint('mdb',__name__)
@@ -115,6 +116,7 @@ def get_results():
 	renvoie en format JSON des résultats à la page de tests.
 	"""
 
+	print('test: server function entered')
 	result_value = request.args.get('value')
 	version = request.args.get('version')
 	limit = int(request.args.get('limit'))
@@ -125,11 +127,30 @@ def get_results():
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
-					{'search_version': 1, 'img_url': 1, 'tag_list': 1, 'test_list': 1,
-					 'location_list': 1, 'location': 1, 'name': 1, '_id': 0})
+					{'text': 1, 'search_version': 1, 'img_url': 1, 'tag_list': 1,
+					 'test_list': 1, 'location_list': 1, 'location': 1, 'name': 1,
+					 'country_code': 1, '_id': 0})
 	doc_list = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
+	print('test: query succeeded')
+	print(doc_list[0])
 
 	return jsonify(results=doc_list)
+
+
+
+@mdb.route('/get_results_geonames',methods=['GET'])
+def get_results_geonames():
+
+	location = request.args.get('location')
+	country_code = request.args.get('country_code')
+
+	search_res = GeoQuery()
+
+	return jsonify(status='OK')
+
+
+
+
 
 
 
