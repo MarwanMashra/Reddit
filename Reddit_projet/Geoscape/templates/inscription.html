@@ -57,12 +57,14 @@
                               </div>
             
                               <button class="btn btn-info" type="submit" form="formId" value="Submit">S'inscrire</button>
-                              <span id="url_connexion">Ou <a href="{{ url_for('connexion') }}">connectez-vous</a></span>
+                              <a class="btn btn-info" href="{{ url_for('connexion') }}">Connexion</a>
+                              <!--span id="url_connexion">Ou <a href="{{ url_for('connexion') }}">connectez-vous</a></span-->
                               {% if error %}
                                  <br><span id="error_message">*{{ error }}</span>
                               {% endif %}
 
-	                 </form>
+                       </form>
+                       
 	           </div>
             </div>
       </div>

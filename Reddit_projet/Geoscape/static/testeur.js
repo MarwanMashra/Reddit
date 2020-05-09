@@ -6,14 +6,16 @@ $(document).ready(function(){
 	var data;                 //stocke les tests 
 	var index=0;              //pour parcouir la liste des tests 
 	var result={};            //stocker le résultat
+	var valuesCheckbox=[];
+	var image;
+	var DEBUG= false; 
 		
-
 	//requête pour demander le nombre de test qu'on a à effectuer
 	$.ajax({
-			type:"GET",
-			url:"/get_count",
-			success: createDiv    //créer le premier élément de la page qui demande au testeur le nombre de test à effectuer
-		}).fail(printError);
+		type:"GET",
+		url:"/get_count",
+		success: createDiv    //créer le premier élément de la page qui demande au testeur le nombre de test à effectuer
+	}).fail(printError);
 
 	function printError(error){    //afficher la page d'erreur 
 		console.error("status: "+error['status']+"\nstatusText: "+error['statusText']);
@@ -27,26 +29,32 @@ $(document).ready(function(){
 		var search_version=count['versions'];
 		if (count!=0) {
 			var div= '<div id="divStart" class="test">';
-			div+= '<p>Bonjour '+pseudo+', vous avez '+nbtest+' tests à faire, veuillez choisir le nombre de tests que vous souhaitez effectuer.</p>';
+			div+= '<p>Bonjour <span style="font-weight: bold">'+pseudo+'</span>, vous avez '+nbtest+' tests à réaliser.</p>'
+			div+= '<p>Veuillez choisir le nombre de tests que vous souhaitez effectuer : ';
 			div+= '<select name="nbtest" id="nbtest">';
 			div+= '<option value="'+nbtest+'">Pas de limite</option>';
 			for (var i = 1; i <= nbtest; i++) {
 				div+= '<option value="'+i+'">'+i+'</option>';
 			}
-			div+= '</select>';
+			div+= '</select></p>';
+			div+= '<p>Veuillez choisir la version du code que vous voulez tester : ';
 			div+= '<select name="search_version" id="search_version">';
 			div+= '<option value="'+search_version[search_version.length -1]+'">Dernière Version</option>';
 			$.each(search_version,(index,version)=>{
 				div+= '<option value="'+version+'">'+version+'</option>';
 			});
-			div+= '</select>';
+			div+= '</select></p><br>';
 			div+= '<button id="start">Commencer le test</button>';
-			div+= '</div>';
-			$("#ici").replaceWith(div);
+			div+= '</div><br>';
+			$("#container").append(div);
 		}
 
-		$('#goToMap').show();
+		addEventStart();
+		
 
+	}
+
+	function addEventStart(){
 		//requête pour demander les données à traiter
 		$("#start").click(function(){
 			NB_TEST = parseInt($("#nbtest").val());
@@ -63,12 +71,13 @@ $(document).ready(function(){
 				success: startTest   //lancer la préparation avant le test
 			}).fail(printError); 
 		});
-
 	}
 
 	function startTest(d){
 		//enregister les données dans une variable glabale data
 		data=d; 
+		NB_TEST= data['results'].length
+		console.log(data['results']);
 		//préparer la variable result 
 		result['search_version']= SEARCH_VERSION;
 		result['img_url']=[];
@@ -78,55 +87,58 @@ $(document).ready(function(){
 			result['results'].push({'lieux_choisis':[]});
 		});
 		
-		//cacher le bouton visiter la map
-		$('#goToMap').hide();
-
 		//lancer le test en créant le premier formulaire
 		createForm();     
 	}
 
 
-	function titreUtili(){
-		var title=data['results'][index]['tag_list'];
-		var name=data['results'][index]['name'].split(" ");	
-		var html="<p>Lieu choisi par le script:<br>";
+	function choiceScript(){
+		var html='<p class="question_phrase">Lieu choisi par les algorithmes:</p><p>'+image['name']+'</p>';
 
-		$.each(title,function(index,mots){
-				if(name.includes(mots[0]))
-					html+= '<span style="background-color: #FFFF00">'+mots[0]+'</span> ';
-				else
-					html+= mots[0]+' ';
-		});
-		html+= "</p>";
+		return html;
+	}
+
+	function choiceUser(){
+		var html='<p class="question_phrase">Lieu proposé par l\'utilisateur:</p><p>'+concateListe(image['test_list'])+'</p>';
 
 		return html;
 	}
 
 	function createForm(){
-	
+		
+		image=data['results'][index];
 		//créer le formulaire
 		var form='';             
-		form+= '<form id="testForm" class="test">';
-		form+= '<p class="question_tag"> Question ('+(index+1)+'/'+NB_TEST+') : </p>';
-
+		form+= '<div id="testForm" class="test">';
+		form+= '<p class="question_tag"> Image ('+(index+1)+'/'+NB_TEST+') : </p>';
+		form+= '<div id="imageDiv" style="background-image: url(\''+image['img_url']+'\')"><img id="image" src="'+image['img_url']+'"></div>';
+		form+= '<p id="text">'+image['text']+'</p><br>'
+		form+= '<div id="contenuTest">'
 		//insértion des éléments dans le formulaire 
-		form+= titreUtili();
+		form+= choiceScript();
+		form+= choiceUser();
 		form+= genCheckbox();
-		form+= genkeywords();
-		
+
+		/*form+= genkeywords();
 		//checkbox "je sais pas"
 		form+= '<br><p>-------------------------------------------------------</p>';
 		form+= '<input type="checkbox" name="je_sais_pas" id="je_sais_pas" value="je_sais_pas">';
 		form+= '<label for="je_sais_pas">Je sais pas, je passe cette question.</label><br>';
 	
-		form+= '<br><button type="submit" name="continue" form="testForm" value="continue">Valider</button>'
+		form+= '<br><button value="continue">Valider</button>'
 		if (index+1 < NB_TEST){     //pour ne pas montrer ce choix avec la dernière question
-   			form+= '<button type="submit" name="stop" form="testForm" value="stop">Valider et quitter</button>'
-		}
-		form+= '</form>';
+   			form+= '<button value="stop">Valider et quitter</button>'
+		}*/
+
+		form+= '<br><br><button value="passe">Passer cette question</button>';
+		form+= '<button value="cherche">Chercher des résultats</button>';
+		form+= '</div>';
+
+		form+= '</div>';
 
 		//insérer la formulaire
 		$(".test").replaceWith(form);      
+		addEventButton();     //ajouter les événements des boutons
 
 		//changer la couleur des mots choisis
 		$(".checkbox").change( function(){       
@@ -134,49 +146,106 @@ $(document).ready(function(){
 				var color = "yellow";
 			}
 			else{
-				var color = "white";
+				var color = "transparent";
 			}
 			$("label[for='"+$(this).attr('id')+"']").css("background-color",color);
 		});
 
-		$("#testForm > button").click(function(){
+	}
 
-			if(!($("input[id='je_sais_pas']").is(':checked'))){                 //vérifier qu'il a pas cocher la casee "je sais pas" (à faire)
- 				updateResult();       //mettre à jour la liste des résultats 
+
+	function addEventButton(){
+		$("#contenuTest > button").click(function(){
+
+			var button=$(this).attr('value');
+			
+			if( button=="cherche"){
+				getValuesCheckbox();    //récuperer les valeurs des checkboxs dans la liste valuesCheckbox
+				createSeceondForm();    //cerhcehr des résultats géonames et créer la deuxième partie de formulaire
 			}
-			console.log(result);
-	       
+			else{    //donc c'est soit "passe" soit "continue" soit "stop"
 
-	        index+=1;
-
-			if( $(this).attr('value')=="continue" ){
-				if(index < NB_TEST){       //continuer les tests
-					
-					createForm();
-
+				if(button != "passe"){
+					updateResult();
 				}
-				else{        //test terminé
+
+				index+=1;
+
+				if(index < NB_TEST && (button == "passe" || button == "continue")){
+					createForm();
+				}
+				else{
 					send();
 					createPageEnd();
 					$('#goToMap').show();
 				}
-				
+
 			}
-			else{       //test arrêté
-				send();
-				createPageEnd();
-				$('#goToMap').show();
-			}
+
+	        
 		});
+	}
+
+	function createSeceondForm(){
+		createSeceondFormSuite(["Lieu_1","Lieu_2","Lieu_3","Lieu_4"]);
+		/*$.ajax({
+			type:"GET",
+			url:"/get_results_geonames",
+			datatype: "json",
+			data:{    
+				location: concateListe(valuesCheckbox),
+				country: image['country']
+			},
+			beforeSend:startAnimation,
+			success: createSeceondFormSuite,
+		}).fail(printError);	
+		*/
+		
+	}
+	function createSeceondFormSuite(list_locations){
+		stopAnimation();
+	
+		var html= '<div id="contenuTest">';
+		html+= '<p class="question_phrase">Vous avez choisi le lieu suivant :</p>'
+		html+= concateListe(valuesCheckbox);
+		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir la plus proche (ou Aucun) :</p>';
+		html+= genRadio(list_locations);
+		html+= '<br>'+genkeywords();
+		
+		if (index+1 < NB_TEST){     //pour ne pas montrer ce choix avec la dernière question
+			html+= '<br><br><button value="stop">Valider et quitter</button>';
+		}
+		html+= '<button value="continue">Valider</button>';
+		html+= '</div>';
+		
+		$("#contenuTest").replaceWith(html);
+		addEventButton();
 
 	}
 
 	function genCheckbox(){
-		var tag_list= data['results'][index]['tag_list'];
-		var checkbox="<br>Veuillez choisir les mots indiquant le lieu:<br>";
-		$.each(tag_list,function(i,tag_mot){
-			if(tag_mot[1]=="PUN" || tag_mot[1]=="SENT"){      //si le mot est une poncutation 
-				checkbox+= tag_mot[0];
+		var tag_list= image['tag_list'];
+		var text= image['text'];
+		var html='<p class="question_phrase">Veuillez choisir les mots indiquant le lieu:</p><p>';
+		var pos;
+		$.each(tag_list,function(i,mot){
+			if(mot[1]!="," && mot[1]!="PUN" && mot[1]!="SENT"){
+				pos= text.indexOf(mot[0]);   //récupérer l'index de début du mot
+				html+= text.substring(0,pos);      //mettre ce qu'il y a avant dans la balise p
+				html+= '<label for="checkbox'+i+'" class="label">'+mot[0]+'</label>';      //créer le label
+				html+= '<input type="checkbox" name="checkbox'+i+'" id="checkbox'+i+'" class="checkbox" value="'+mot[0]+'">';  //créer le checkbox
+				text= text.substr(pos+mot[0].length);     //supprimer le mot et ce qu'il y a avant de la phrase originale
+			}
+		});
+		html+= '.</p>';
+
+		return html;
+	}
+	/*
+		
+
+		if(tag_mot[1]=="PUN" || tag_mot[1]=="SENT"){      //si le mot est une poncutation 
+			checkbox+= tag_mot[0];
 			}
 			else if(tag_mot[1]=="CTY"){
 				checkbox+= ' '+tag_mot[0];
@@ -185,59 +254,103 @@ $(document).ready(function(){
 				checkbox+= '<label for="checkbox'+i+'" class="label">  '+tag_mot[0]+'</label>'
 				checkbox+= '<input type="checkbox" name="checkbox'+i+'" id="checkbox'+i+'" class="checkbox" value="'+tag_mot[0]+'">'
 			}
-		
-		});
-		return checkbox;
-	}
+			html+= text + '</p>';     //mettre le reste de la phrase dans la balise p
+		*/
 
 	function genkeywords(){
-		var loc_list=data['results'][index]['location_list'];
-		var proper_loc=[];
-		$(loc_list).each(function(i,loc){
-			if(typeof loc !== "number"){
-				proper_loc.push(loc);
-			}
-		});
-		var keywords="<br><br><p>Est-ce que le lieu est présent dans ces mots clés :";
-		//keywords+='<p>'+data['results'][index]['location_list']+'</p>';
+		var loc_list=image['location_list'];
+		var proper_loc=loc_list.filter(x => isNaN(x));
+
+		var keywords='<p class="question_phrase">Est-ce que le lieu est présent dans ces mots clés :';
+		//keywords+='<p>'+image['location_list']+'</p>';
 		keywords+='<p>'+proper_loc+'</p>';
-		keywords+='<input type="checkbox" id="keywords" name="keywords" value="keywords" >';
-		keywords+='<label for="keywords"> Oui, il est présent</label></p>';
+		keywords+='<input type="radio" id="Oui" name="keywords" value="Oui" >';
+		keywords+='<label for="Oui"> Oui, il est présent</label></p>';
+		keywords+='<input type="radio" id="Non" name="keywords" value="Non" checked>';
+		keywords+='<label for="Non"> Non, il n\'est pas présent</label></p>';
 
 		return keywords;
 
 	}
  
+	function getValuesCheckbox(){
+		valuesCheckbox=[];      //liste de tous les mots choisis
+
+		$.each( $("input[class='checkbox']:checked") , function(){
+			valuesCheckbox.push($(this).val());         //remplir la liste avec les mots mots 
+		});
+	}
 
 	function updateResult(){
-		var values=[];      //liste de tous les mots choisis
-
-		$.each( $("input[value!='keywords']:checked") , function(){
-			values.push($(this).val());         //remplir la liste avec les mots mots 
-		});
-
-		$.each(data['results'][index]['tag_list'], function(i,mot){            //parcourir la liste tag_list
-            result['results'][index]['lieux_choisis'].push( $.inArray(mot[0],values) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
+		$.each(image['tag_list'], function(i,mot){            //parcourir la liste tag_list
+            result['results'][index]['lieux_choisis'].push( $.inArray(mot[0],valuesCheckbox) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
 		});
 		
-        result['results'][index]['suffisant']= $("input[id='keywords']").is(':checked');
+		result['results'][index]['suffisant']= ($("input[name='keywords']:checked").val() == "Oui");
+		result['results'][index]['geonames_chosen_result']= ($("input[name='location']:checked").val());
 
 	}
 
 	function send(){
+		if (!DEBUG){
 			$.ajax({
 				type:"POST",
 				url: "/send_results",
 				contentType: "application/json;charset=UTF-8",
 				data: JSON.stringify(result)
 			}).fail(printError);
+		}
+		else{
+			console.log(result);
+		}
+		
+	}
 
+	function concateListe(liste){
+		var str="";
+		$.each(liste,function(i,mot){
+			str+=mot+" ";	
+		});
+		return str.substring(0, str.length - 1);
+	}
+
+	function genRadio(list_locations){
+		var html="";
+		$.each(list_locations,function(i,location){
+			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location+'">';
+			html+=  '<label for="location'+i+'"> '+location+'</label><br>';
+		});
+
+		html+= '<input type="radio" id="Aucun" name="location" value="None" checked>';
+		html+= '<label for="Aucun">Aucun</label>';
+
+		return html;
 	}
 
 	function createPageEnd(){
-		var html='<p>Fin de test. Toute notre équipe vous remercie ^_^ </p>';
+		var html='<p>Fin de test. Toute notre équipe vous remercie 🙏🏼 </p><br>';
+		html+= '<a href="testeur"><button value="restart">Relancer le test</button></a>';
 		$(".test").replaceWith(html);
+		
 	}
+
+	function startAnimation(){
+		var animation= "<div id=\"animation\"><div id=\"content\"><div id=\"circle1\"></div><div id=\"circle2\"></div></div></div>";
+		$("body").append(animation);
+	}
+
+	function stopAnimation(){
+		$("#animation").remove();
+	}
+	
+	$("#goToMap").click(sendExit);
+	$("#deconnexion").click(sendExit);
+	function sendExit(){
+		if(index>0){
+			send();
+		}
+	}
+
 
 
 });
