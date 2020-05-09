@@ -140,17 +140,26 @@ def get_results():
 
 @mdb.route('/get_results_geonames',methods=['GET'])
 def get_results_geonames():
+	"""Recherche sur geonames les lieux sélectionnés par le testeur, renvoie au plus
+	3 résultats par lieu, accompagnés de leur feature_class pour aider le testeur à
+	identifier le bon endroit.
+	"""
 
-	location = request.args.get('location')
+	locations = request.args.get('location').split(',')
 	country_code = request.args.get('country_code')
 
-	search_res = GeoQuery()
+	placefinder = geo.LocationsList(country_code,[])
+	loc_results = []
 
-	return jsonify(status='OK')
+	for loc in locations:
+		placefinder.reinit(country_code,[loc])
+		for search in ['EN EH','R','RF']:
+			geo_res = placefinder.geo_search(current_app.config['GEOKEY'],
+									current_app.config['GEOAUTH'],search)
+			if geo_res.result:
+				loc_results.append([geo_res.address,geo_res.feature_class])	#Nom et catégorie
 
-
-
-
+	return jsonify(loc_results)
 
 
 

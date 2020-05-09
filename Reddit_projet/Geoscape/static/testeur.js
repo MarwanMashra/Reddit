@@ -189,19 +189,18 @@ $(document).ready(function(){
 	}
 
 	function createSeceondForm(){
-		createSeceondFormSuite(["Lieu_1","Lieu_2","Lieu_3","Lieu_4"]);
-		/*$.ajax({
+		//createSeceondFormSuite(["Lieu_1","Lieu_2","Lieu_3","Lieu_4"]);
+		$.ajax({
 			type:"GET",
 			url:"/get_results_geonames",
 			datatype: "json",
 			data:{    
-				location: concateListe(valuesCheckbox,true,false),
-				country: image['country_code']
+				locations: concateListe(valuesCheckbox,true,false),
+				country_code: image['country_code']
 			},
 			beforeSend:startAnimation,
 			success: createSeceondFormSuite,
 		}).fail(printError);	
-		*/
 		
 	}
 	function createSeceondFormSuite(list_locations){
@@ -210,7 +209,7 @@ $(document).ready(function(){
 		var html= '<div id="contenuTest">';
 		html+= '<p class="question_phrase">Vous avez choisi le lieu suivant :</p>'
 		html+= concateListe(valuesCheckbox,true,true);
-		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir la plus proche (ou Aucun) :</p>';
+		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir le plus proche (ou Aucun) :</p>';
 		html+= genRadio(list_locations);
 		html+= '<br>'+genkeywords();
 		
