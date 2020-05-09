@@ -196,7 +196,7 @@ $(document).ready(function(){
 			datatype: "json",
 			data:{    
 				location: concateListe(valuesCheckbox,true,false),
-				country: image['country']
+				country: image['country_code']
 			},
 			beforeSend:startAnimation,
 			success: createSeceondFormSuite,
