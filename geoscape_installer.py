@@ -41,10 +41,6 @@ if(platform.startswith('win')):
 else:
 	env_python = join(getcwd(),env,'bin','python3')
 
-print('###################')
-print(env_python)
-print('###################')
-
 try:
 	run([env_python,'-m','pip','install','-r','requirements.txt','--no-cache-dir'],check=True)
 except CalledProcessError:
