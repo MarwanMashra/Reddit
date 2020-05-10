@@ -1,175 +1,175 @@
 France, Jura, FR, Bon: Jura T, Accep: Jura A
-France, Val d'Isère, FR, Bon: Val d'Isère P
-France, Chamonix, FR, Bon: Chamonix P
+France, Val d'Isère, FR, Bon: Val d'Isère P, Accep:
+France, Chamonix, FR, Bon: Chamonix P, Accep:
 France, Corsica, FR, Bon: Corse L, Corsica A, Accep: Corsica (Roman Province) A, Ajaccio P
 France, Montriond, FR, Bon: Montriond A, Montriond P, Accep: Montriond H
-France, Haute Savoie, FR, Bon: Upper Savoy A
-France, Roc d'Enfer, FR, Bon: Roc d'Enfer T
-France, Rhône-Alpes, FR, Bon: Rhône-Alpes A, Rhône-Alpes, L Accep: Lyon P
-Armenia, Ararat, AM, Bon: aucun résultat
-Armenia, Mount Ararat, AM, Bon: aucun résultat
-Armenia, Gegham, AM, Bon: Geghmaghan T
-Armenia, Azat River, AM, Bon: Azat H
-Armenia, Tatev, AM, Bon: Tat'ev H, Tatev P
-Armenia, Mount Ararat, AM, Bon: aucun résultat
+France, Haute Savoie, FR, Bon: Upper Savoy A, Accep:
+France, Roc d'Enfer, FR, Bon: Roc d'Enfer T, Accep:
+France, Rhône-Alpes, FR, Bon: Rhône-Alpes A, Rhône-Alpes L, Accep: Lyon P
+Armenia, Ararat, AM, Bon: aucun résultat, Accep:
+Armenia, Mount Ararat, AM, Bon: aucun résultat, Accep:
+Armenia, Gegham, AM, Bon: Geghmaghan T, Accep:
+Armenia, Azat River, AM, Bon: Azat H, Accep:
+Armenia, Tatev, AM, Bon: Tat'ev H, Tatev P, Accep:
+Armenia, Mount Ararat, AM, Bon: aucun résultat, Accep:
 Armenia, Sevan, AM, Bon: Lake Sevan H, Accep: Sevan P
 Armenia, Dilijan, AM, Bon: Dilijan A, Dilijan L, Accep: Dilijan P
 Armenia, Lori, AM, Bon: Lori A, Accep: Vanadzor P
-Argentina, Patagonia, AR, Bon: Patagonia L
-Argentina, Fitz Roy, AR, Bon: Cerro Chaltén T
+Argentina, Patagonia, AR, Bon: Patagonia L, Accep:
+Argentina, Fitz Roy, AR, Bon: Cerro Chaltén T, Accep:
 Argentina, El Bolsón, AR, Bon: El Bolsón P, Accep: El Bolsón Airport S
-Argentina, Cerro Torre, AR, Bon: Cerro Torre T
-Argentina, Rio De las Vueltas, AR, Bon: Rio de las Vueltas H
-Argentina, Perito Moreno Glacier, AR, Bon: Perito Moreno Glacier H
-Spain, Playa de las Catedrales, ES, Bon: Playa de las Catedrales T
-Spain, Bardenas, ES, Bon: Bardenas Reales L
-Spain, Boca del Infierno, ES, Bon: Boca del Infierno T
-Spain, Val d'Echo, ES, Bon: aucun résultat
-Spain, Picos de Europa, ES, Bon: Picos de Europa T
-Spain, Asturias, ES, Bon: Asturias A, Accep: Oviedo P
-Spain, Roque de los Muchachos, ES, Bon: Roque de los Muchachos T
+Argentina, Cerro Torre, AR, Bon: Cerro Torre T, Accep:
+Argentina, Rio De las Vueltas, AR, Bon: Río de las Vueltas H, Accep:
+Argentina, Perito Moreno Glacier, AR, Bon: Perito Moreno Glacier H, Accep:
+Spain, Playa de las Catedrales, ES, Bon: Playa de las Catedrales T, Accep:
+Spain, Bardenas, ES, Bon: Bardenas Reales L, Accep:
+Spain, Boca del Infierno, ES, Bon: Boca del Infierno T, Accep:
+Spain, Val d'Echo, ES, Bon: aucun résultat, Accep:
+Spain, Picos de Europa, ES, Bon: Picos de Europa T, Accep:
+Spain, Asturias, ES, Bon: Asturias A, Asturias L, Accep: Oviedo P
+Spain, Roque de los Muchachos, ES, Bon: Roque de los Muchachos T, Accep:
 Spain, La Palma, ES, Bon: La Palma Island T, Accep: Santa Cruz de la Palma P, La Palma Airport S
 Spain, Santander, ES, Bon: Santander P, Accep: Cantabria A
-Spain, Sierra de Gredos, ES, Bon: Sierra de Gredos T
+Spain, Sierra de Gredos, ES, Bon: Sierra de Gredos T, Accep:
 Spain, Mallorca, ES, Bon: Majorca T, Majorca A, Accep: Palma P
-Spain, Castillo de Alange, ES, Bon: aucun résultat
-Spain, Playa de Barro, ES, Bon: aucun résultat
-Spain, Llanes, ES, Bon: Llanes A P
-Spain, Mayorga de Campos, ES, Bon: aucun résultat
+Spain, Castillo de Alange, ES, Bon: aucun résultat, Accep:
+Spain, Playa de Barro, ES, Bon: aucun résultat, Accep:
+Spain, Llanes, ES, Bon: Llanes A, Llanes P, Accep:
+Spain, Mayorga de Campos, ES, Bon: aucun résultat, Accep:
 Spain, Andalucia, ES, Bon: Andalusia A, Accep: Seville P
-Spain, Urkiola, ES, Bon: Urkiola P
+Spain, Urkiola, ES, Bon: Urkiola P, Accep:
 Spain, Sierra Nevada, ES, Bon: Sierra Nevada T, Accep: Sierra Nevada P, Sierra Nevada L
-Spain, Extremadura, ES, Bon: Extremadura A, Accep: Badajoz P
-Switzerland, Oeschinensee, CH, Bon: Oeschinensee H
-Switzerland, Appenzell, CH, Bon: Appenzell P
-Switzerland, Gimmelwald, CH, Bon: Gimmelwald P
-Switzerland, Zermatt, CH, Bon: Zermatt A P
-Switzerland, Matterhorn, CH, Bon: Matterhorn T
-Switzerland, Alps, CH, Bon: Alps T
-Switzerland, Moiry Glacier, CH, Bon: Glacier de Moiry H
+Spain, Extremadura, ES, Bon: Extremadura A, Extremadura L, Accep: Badajoz P
+Switzerland, Oeschinensee, CH, Bon: Oeschinensee H, Accep:
+Switzerland, Appenzell, CH, Bon: Appenzell P, Accep:
+Switzerland, Gimmelwald, CH, Bon: Gimmelwald P, Accep:
+Switzerland, Zermatt, CH, Bon: Zermatt A, Zermatt P, Accep:
+Switzerland, Matterhorn, CH, Bon: Matterhorn T, Accep:
+Switzerland, Alps, CH, Bon: Alps T, Accep:
+Switzerland, Moiry Glacier, CH, Bon: Glacier de Moiry H, Accep:
 Switzerland, Gschwantenmad, CH, Bon: aucun résultat, Accep: Gschwandtenmaad S
-Switzerland, Hirzel, CH, Bon: Hirzel T, Accep: Hirzel A P
-Switzerland, Gastlosen, CH, Bon: Gastlosen T
+Switzerland, Hirzel, CH, Bon: Hirzel T, Accep: Hirzel A, Hirzel P
+Switzerland, Gastlosen, CH, Bon: Gastlosen T, Accep:
 Switzerland, St. Gallen, CH, Bon: Saint Gall A, Accep: St. Gallen P
-Switzerland, Piz Glüschaint, CH, Bon: aucun résultat
+Switzerland, Piz Glüschaint, CH, Bon: aucun résultat, Accep:
 Switzerland, St. Moritz, CH, Bon: St. Moritz A, Accep: Saint Moritz P
-Switzerland, Gimmelwald, CH, Bon: Gimmelwald P
-Switzerland, Aletsch Glacier, CH, Bon: Aletsch Glacier H
-Switzerland, Wallis, CH, Bon: Valais A
+Switzerland, Gimmelwald, CH, Bon: Gimmelwald P, Accep:
+Switzerland, Aletsch Glacier, CH, Bon: Aletsch Glacier H, Accep:
+Switzerland, Wallis, CH, Bon: Valais A, Accep: Sion P
 Switzerland, Lauterbrunnen, CH, Bon: Lauterbrunnen A, Accep: Lauterbrunnen P
-Switzerland, Latschüelfurgga, CH, Bon: Latschüelfurgga T
-Switzerland, Zürich, CH, Bon: Zürich P
-Switzerland, Wengen, CH, Bon: Wengen P
+Switzerland, Latschüelfurgga, CH, Bon: Latschüelfurgga T, Accep:
+Switzerland, Zürich, CH, Bon: Zurich P, Zürich P, Accep:
+Switzerland, Wengen, CH, Bon: Wengen P, Accep:
 Switzerland, Laax, CH, Bon: Laax A, Accep: Laax P
-Switzerland, Ried, CH, Bon: Ried P
-Italy, Dolomites, IT, Bon: Dolomites T
-Italy, Lago Limides, IT, Bon: Lago Limides H
-Italy, Tre Cime de Lavaredo, IT, Bon: Tre Cime de Lavaredo T
-Italy, Seceda, IT, Bon: Seceda L
-Italy, Passo Giau, IT, Bon: Passo Giau T
-Italy, Lago di Nambino, IT, Bon: Rifugio Lago Nambino S
-Italy, Alps, IT, Bon: Alps T
-Italy, Alpe di Siusi, IT, Bon: Alpe di Siusi T
-Italy, Lago di Bràies, IT, Bon: Lago di Bràies H
+Switzerland, Ried, CH, Bon: Ried P, Accep:
+Italy, Dolomites, IT, Bon: Dolomites T, Accep:
+Italy, Lago Limides, IT, Bon: Lago Limides H, Accep:
+Italy, Tre Cime de Lavaredo, IT, Bon: Tre Cime de Lavaredo T, Accep:
+Italy, Seceda, IT, Bon: Seceda L, Accep:
+Italy, Passo Giau, IT, Bon: Passo Giau T, Accep:
+Italy, Lago di Nambino, IT, Bon: Rifugio Lago Nambino S, Accep:
+Italy, Alps, IT, Bon: Alps T, Accep:
+Italy, Alpe di Siusi, IT, Bon: Alpe di Siusi T, Accep:
+Italy, Lago di Bràies, IT, Bon: Lago di Bràies H, Accep:
 Italy, South Tyrol, IT, Bon: Trentino-Alto Adige A, Accep: Bolzano P
 United Kingdom, Northern Ireland, GB, Bon: Northern Ireland A, Accep: Belfast P
-United Kingdom, Bluebell Woods, GB, Bon: Bluebell Wood V
-United Kingdom, Ivinghoe, GB, Bon: Ivinghoe A, Ivinghoe P
-United Kingdom, Pembrokeshire, GB, Bon: Pembrokeshire A
+United Kingdom, Bluebell Woods, GB, Bon: Bluebell Wood V, Accep:
+United Kingdom, Ivinghoe, GB, Bon: Ivinghoe A, Ivinghoe P, Accep:
+United Kingdom, Pembrokeshire, GB, Bon: Pembrokeshire A, Accep:
 United Kingdom, South Wales, GB, Bon: South Wales L, Accep: Cardiff P
-United Kingdom, Lake District, GB, Bon: Lake District L
+United Kingdom, Lake District, GB, Bon: Lake District L, Accep:
 United Kingdom, Dorset, GB, Bon: Dorset L, Dorset A, Accep: Bournemouth P
-Greece, Mt Pelion, GR, Bon: Óros Pílion T
-Greece, Meteora, GR, Bon: Meteora S
-Greece, Elafonisi Beach, GR, Bon: Elafonisi Beach T
-Greece, Kefallonia, GR, Bon: Kefalonia T A
-Greece, Dimosari, GR, Bon: aucun résultat
+Greece, Mt Pelion, GR, Bon: Óros Pílion T, Accep:
+Greece, Meteora, GR, Bon: Meteora S, Accep:
+Greece, Elafonisi Beach, GR, Bon: Elafonisi Beach T, Accep:
+Greece, Kefallonia, GR, Bon: Kefalonia T, Kefalonia A, Accep:
+Greece, Dimosari, GR, Bon: aucun résultat, Accep:
 Greece, Corfu, GR, Bon: Corfu T, Accep: Corfu P
 Greece, Zakynthos, GR, Bon: Zante Island T, Accep: Zakynthos P
-Greece, Chalkidiki, GR, Bon: Chalcidice T, Accep: Chalkidikí A, Eparchía Chalkidikís A  
+Greece, Chalkidiki, GR, Bon: Chalcidice T, Accep: Chalkidikí A, Eparchía Chalkidikís A
 Greece, Skiathos, GR, Bon: Skiathos T, Accep: Skiathos P
-Denmark, Bulbjerg, DK, Bon: Bulbjerg T
+Denmark, Bulbjerg, DK, Bon: Bulbjerg T, Accep:
 Denmark, Skagen, DK, Bon: The Skaw T, Accep: Skagen P
-Denmark, Råbjerg Mile, DK, Bon: Råbjerg Mile T
-Denmark, Møns Klint, DK, Bon: Møns Klint T
-Croatia, Plitvice Lakes, HR, Bon: Plitvice Lakes National Park L
-Croatia, Krka Falls, HR, Bon: Slapovi Krke H
+Denmark, Råbjerg Mile, DK, Bon: Råbjerg Mile T, Accep:
+Denmark, Møns Klint, DK, Bon: Møns Klint T, Accep:
+Croatia, Plitvice Lakes, HR, Bon: Plitvice Lakes National Park L, Accep:
+Croatia, Krka Falls, HR, Bon: Slapovi Krke H, Accep:
 Croatia, Paklenica, HR, Bon: Paklenica National Park L, Accep: Paklenica H
 Croatia, Zagreb, HR, Bon: Zagreb P, Accep: Zagreb County A
 Croatia, Hvar, HR, Bon: Hvar T, Accep: Grad Hvar A, Hvar P, Hvar Airport S
-Croatia, Medvednica, HR, Bon: Medvenica T, Medvenica L
-Croatia, Marusici, HR, Bon: Marusici P
-Croatia, Dubrovnik, HR, Bon: Dubrovnik P
-Thailand, Hin Ta Hin Yai, TH, Bon: Hin Ta and Hin Yai T
+Croatia, Medvednica, HR, Bon: Medvenica T, Medvenica L, Accep:
+Croatia, Marusici, HR, Bon: Marušići P, Accep:
+Croatia, Dubrovnik, HR, Bon: Dubrovnik P, Accep:
+Thailand, Hin Ta Hin Yai, TH, Bon: Hin Ta and Hin Yai T, Accep:
 Thailand, Koh Samui, TH, Bon: Ko Samui T, Accep: Ko Samui P, Koh Samui Airport S
-Thailand, Khao Sok, TH, Bon: Khao Sok National Park L, Khao Sok T
-Thailand, Andaman Sea, TH, Bon: Andaman Sea H
-Thailand, Doi Inthanon, TH, Bon: Doi Inthanon T
+Thailand, Khao Sok, TH, Bon: Khao Sok National Park L, Khao Sok T, Accep:
+Thailand, Andaman Sea, TH, Bon: Andaman Sea H, Accep:
+Thailand, Doi Inthanon, TH, Bon: Doi Inthanon T, Accep:
 Thailand, Chiang Mai, TH, Bon: Chiang Mai A, Accep: Chiang Mai P
 Thailand, Phang Nga, TH, Bon: Phang Nga A, Accep: Phang Nga P
-Thailand, Namuang, TH, Bon: Namuang P
+Thailand, Namuang, TH, Bon: Namuang P, Accep:
 Thailand, koh samui, TH, Bon: Ko Samui T, Accep: Ko Samui P, Koh Samui Airport S
-Thailand, Koh Chang, TH, Bon: Ko Chang T
-Thailand, Kew Mae Pan, TH, Bon: aucun résultat
-Guatemala, Santa Maria, GT, Bon: Volcán Santa María T
-Guatemala, Volcán de Fuego, GT, Bon: Volcán de Fuego T
-Guatemala, Semuc Champey, GT, Bon: Semuc Champey H
-Guatemala, Acatenango, GT, Bon: Volcán de Acatenango T, Accep: Municipio de Acatenango A Acatenango P
+Thailand, Koh Chang, TH, Bon: Ko Chang T, Accep:
+Thailand, Kew Mae Pan, TH, Bon: aucun résultat, Accep:
+Guatemala, Santa Maria, GT, Bon: Volcán Santa María T, Accep:
+Guatemala, Volcán de Fuego, GT, Bon: Volcán de Fuego T, Accep:
+Guatemala, Semuc Champey, GT, Bon: Semuc Champey H, Accep:
+Guatemala, Acatenango, GT, Bon: Volcán de Acatenango T, Accep: Municipio de Acatenango A, Acatenango P
 Guatemala, Antigua, GT, Bon: Municipio de Antigua Guatemala A, Accep: Antigua Guatemala P
-Guatemala, Volcán Atitlán, GT, Bon: Volcán Atitlán T
-Guatemala, Lake Atitlán, GT, Bon: Lago de Atitlán H
+Guatemala, Volcán Atitlán, GT, Bon: Volcán Atitlán T, Accep:
+Guatemala, Lake Atitlán, GT, Bon: Lago de Atitlán H, Accep:
 Norway, Senja, NO, Bon: Senja T, Accep: Senja A
-Norway, Kongsberg, NO, Bon: Kongsberg A P
+Norway, Kongsberg, NO, Bon: Kongsberg A, Kongsberg P, Accep:
 Norway, Viken, NO, Bon: Viken A, Accep: Drammen P
-Norway, Lofoten, NO, Bon: Lofoten T
-Japan, Yoshinoyama, JP, Bon: Yoshino Yama T
+Norway, Lofoten, NO, Bon: Lofoten T, Accep:
+Japan, Yoshinoyama, JP, Bon: Yoshino Yama T, Accep:
 Japan, Fuji, JP, Bon: Mount Fuji T, Accep: Fuji P
-Japan, Shiratani Unsuiko, JP, Bon: aucun résultat
+Japan, Shiratani Unsuiko, JP, Bon: aucun résultat, Accep:
 Japan, Yakushima, JP, Bon: Yakushima T, Accep: Yakushima A
 Japan, Kyushu, JP, Bon: Kyushu T, Accep: Kyūshū Chihō L
-Japan, Yamanashi, JP, Bon: Yamanashi A
-Japan, Lake Kawaguchiko, JP, Bon: aucun résultat
+Japan, Yamanashi, JP, Bon: Yamanashi A, Accep:
+Japan, Lake Kawaguchiko, JP, Bon: aucun résultat, Accep:
 Japan, Kanagawa, JP, Bon: Kanagawa A, Accep: Yokohama P
-Japan, Kamikochi, JP, Bon: Kamikōchi T
-Japan, Kushimoto, JP, Bon: Kushimoto P Kushimoto-chō A
-Japan, Tokyo, JP, Bon: Tokyo P
+Japan, Kamikochi, JP, Bon: Kamikōchi T, Accep:
+Japan, Kushimoto, JP, Bon: Kushimoto P, Kushimoto-chō A, Accep:
+Japan, Tokyo, JP, Bon: Tokyo P, Accep:
 Japan, Okinawa, JP, Bon: Okinawa T, Okinawa A, Accep: Naha P
-Japan, Aoiike, JP, Bon: aucun résultat
-Japan, Shirogane, JP, Bon: aucun résultat
+Japan, Aoiike, JP, Bon: aucun résultat, Accep:
+Japan, Shirogane, JP, Bon: aucun résultat, Accep:
 Japan, Hokkaido, JP, Bon: Hokkaido T, Hokkaido L, Hokkaido A, Accep: Sapporo P
 Japan, Himeji, JP, Bon: Himeji P, Accep: Himeji Shi A
 South Korea, Jeolla, KR, Bon: Jeollanam-do A, Accep: Jeonju P
-South Korea, Daedunsan, KR, Bon: Daedunsan T
-South Korea, Wolchulsan, KR, Bon: Wolchulsan T
+South Korea, Daedunsan, KR, Bon: Daedunsan T, Accep:
+South Korea, Wolchulsan, KR, Bon: Wolchulsan T, Accep:
 South Korea, Gongju, KR, Bon: Gongju-si A, Accep: Gongju P
-South Korea, Imhanri, KR, Bon: aucun résultat
-South Korea, Seryangji, KR, Bon: Seryangje H
-South Korea, Jebibong, KR, Bon: Jebibong T
-South Korea, Geomdansan, KR, Bon: Geomdansan T
+South Korea, Imhanri, KR, Bon: aucun résultat, Accep:
+South Korea, Seryangji, KR, Bon: Seryangje H, Accep:
+South Korea, Jebibong, KR, Bon: Jebibong T, Accep:
+South Korea, Geomdansan, KR, Bon: Geomdansan T, Accep:
 South Korea, Jeju Island, KR, Bon: Jejudo T, Jeju-do A, Accep: Jeju City P
-South Korea, Haesindang, KR, Bon: Haesin-dang S
-South Korea, Seongsan Ilchulbong, KR, Bon: Seongsan Ilchulbong T
-South Korea, Seoraksan, KR, Bon: Seoraksan T, Seoraksan L
-Bolivia, Huayna Potosi, BO, Bon: Nevado Huayna Potosí T
-Bolivia, Sud Lipez, BO, Bon: Sur Lípez A
+South Korea, Haesindang, KR, Bon: Haesin-dang S, Accep:
+South Korea, Seongsan Ilchulbong, KR, Bon: Seongsan Ilchulbong T, Accep:
+South Korea, Seoraksan, KR, Bon: Seoraksan T, Seoraksan L, Accep:
+Bolivia, Huayna Potosi, BO, Bon: Nevado Huayna Potosí T, Accep:
+Bolivia, Sud Lipez, BO, Bon: Sur Lípez A, Accep:
 Bolivia, South Potosi, BO, Bon: Departamento de Potosí A, Accep: Potosí P
-Bolivia, Cordillera de los Frailes, BO, Bon: Cordillera de los Frailes T
-Bolivia, Salar de Uyuni, BO, Bon: Salar de Uyuni L
-Nepal, Poon Hill, NP, Bon: Poon Hill T
-Nepal, Machhapuchhre, NP, Bon: Fishtail T
-Nepal, Annapurna, NP, Bon: Annapurna T, Accep: Annapurna A
-Nepal, Mt Everest, NP, Bon: Mount Everest T
-Ethiopia, Simien Mountains, ET, Bon: Simēn L
-Ethiopia, Bale Mountains, ET, Bon: Bale Mountains National Park L
+Bolivia, Cordillera de los Frailes, BO, Bon: Cordillera de los Frailes T, Accep:
+Bolivia, Salar de Uyuni, BO, Bon: Salar de Uyuni L, Accep:
+Nepal, Poon Hill, NP, Bon: Poon Hill T, Accep:
+Nepal, Machhapuchhre, NP, Bon: Fishtail T, Accep:
+Nepal, Annapurna, NP, Bon: Annapurna T, Annapurna I T, Annapurna II T, Annapurna III T, Annapurna IV T, Accep: Annapurna A
+Nepal, Mt Everest, NP, Bon: Mount Everest T, Accep:
+Ethiopia, Simien Mountains, ET, Bon: Simēn L, Accep:
+Ethiopia, Bale Mountains, ET, Bon: Bale Mountains National Park L, Accep:
 Ethiopia, Dallol, ET, Bon: Dallol T, Accep: Dalol P
-Ethiopia, Bahir Dar, ET, Bon: Bahir Dar A, Bahir Dar P
-Ethiopia, Lalibela, ET, Bon: Lalibela P
+Ethiopia, Bahir Dar, ET, Bon: Bahir Dar Āwraja A, Bahir Dar P, Accep:
+Ethiopia, Lalibela, ET, Bon: Lalibela P, Accep:
 Ethiopia, Gonder, ET, Bon: North Gonder A, South Gonder A, Gonder Āwraja A, Accep: Gonder P
-Ethiopia, Hudad, ET, Bon: Hudad P
+Ethiopia, Hudad, ET, Bon: Hudad P, Accep:
 Jordan, Irbid, JO, Bon: Irbid A, Accep: Irbid P
 Jordan, Jerash, JO, Bon: Jerash P, Accep: Jerash A
-Jordan, Wadi Ghuweir, JO, Bon: Wādī al Ghuwayr ash Shamāliyah H
+Jordan, Wadi Ghuweir, JO, Bon: Wādī al Ghuwayr ash Shamāliyah H, Accep:
 Bulgaria, Pirin Mountain, BG, Bon: Kamenitsa T, Accep: Pirin P
-Bulgaria, Burgas, BG, Bon: Burgas A, Burgas P
-Bulgaria, Belogradcnik, BG, Bon: Belogradchik P Accep: Belogradchik A
-Bulgaria, Varna, BG, Bon: Varna A, Varna P
+Bulgaria, Burgas, BG, Bon: Burgas A, Burgas P, Accep:
+Bulgaria, Belogradcnik, BG, Bon: Belogradchik P, Accep: Belogradchik A
+Bulgaria, Varna, BG, Bon: Varna A, Varna P, Accep:

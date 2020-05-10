@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import dns, pymongo, sys
+import dns, pymongo
 
 from Geoscape.server import client
 
@@ -22,11 +22,19 @@ class Mongo:
 	   fichier db_init.py.
 	"""
 
-	@classmethod
-	def mongocheck(cls,coll_exists):
+	@staticmethod
+	def mongocheck(coll_exists):
 		"""Vérifie l'existence d'une collection.
 		"""
 		return coll_exists in client.list_collection_names()
+
+	@staticmethod
+	def mongocount(coll_tocount,query={}):
+		"""Compte et renvoit le nombre de documents dans une collection.
+		'query' est une requête pour filtrer les documents devant être comptés.
+		"""
+		coll = client[coll_tocount]
+		return coll.count_documents(query)
 
 	@classmethod
 	def indexcheck(cls,coll_tocheck,index):
@@ -58,14 +66,6 @@ class Mongo:
 		if index_list:
 			index_name = '_'.join(i[0].split('_')[0] for i in index_list)
 			coll.create_index(index_list,name=index_name)
-
-	@classmethod
-	def mongocount(cls,coll_tocount,query={}):
-		"""Compte et renvoit le nombre de documents dans une collection.
-		'query' est une requête pour filtrer les documents devant être comptés.
-		"""
-		coll = client[coll_tocount]
-		return coll.count_documents(query)
 
 
 
@@ -102,8 +102,8 @@ class MongoSave(Mongo):
 		except pymongo.errors.BulkWriteError as error:
 			for e in error.details['writeErrors']:
 				if e['code'] == 11000: #DuplicateKeyError
-					print('Document '+str(e['op']['_id'])+' déjà présent dans la collection '
-						+coll.name+' de la base de données.')
+					print(f'Document {e['op']['_id']} déjà présent dans la collection '
+						  f'{coll.name} de la base de données.')
 				else:
 					raise
 		else:

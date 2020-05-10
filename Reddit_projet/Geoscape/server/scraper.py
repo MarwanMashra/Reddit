@@ -245,7 +245,7 @@ def scraping():
 					"""
 
 					placefinder = geo.LocationList(country_code,location_list)
-					geo_res = placefinder.geo_search(geokey,geoauth,'EN EH','R','RF')	#Objet GeoQuery
+					geo_res = placefinder.geo_search(geokey,geoauth,'EN EH','R')	#Objet GeoQuery
 
 					#En dernier recours, le pays lui-même s'il est dans le titre
 					if geo_res.result is None and country in res.group(1):

@@ -61,7 +61,8 @@ def report():
 	word_list = data['list_words']		#Vide si OK
 		
 	dbfinder = mongo.MongoLoad({'search_version': response['search_version'],
-								'img_url': response['img_url'], 'test_result': {'$exists': True}},
+								'img_url': response['img_url'],
+								'test_result': {'$exists': True}},
 							   {'img_url': 1, '_id': 0})
 
 	try:
@@ -74,8 +75,11 @@ def report():
 
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = list(dbfinder.retrieve('Testeurs'))
-		seed()
-		tester_sum = sum(2**t['code'] for t in sample(tester_list,3)) #Sélection aléatoire dans la liste
+		n = len(tester_list)
+		num_testers = min(n if n % 2 else n - 1, 9)
+
+		seed()	#Sélection aléatoire dans la liste
+		tester_sum = sum(2**t['code'] for t in sample(tester_list,num_testers))
 		bytesize = floor(log2(tester_sum)/8 if tester_sum else 0) + 1 #log2(0) non défini
 		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
 		
@@ -148,7 +152,7 @@ def get_results_geonames():
 	locations = request.args.get('location').split(',')
 	country_code = request.args.get('country_code')
 
-	placefinder = geo.LocationsList(country_code,[])
+	placefinder = geo.LocationList(country_code,[])
 	loc_results = []
 
 	for loc in locations:

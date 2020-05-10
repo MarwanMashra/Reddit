@@ -5,24 +5,73 @@
 Pour n lieux à tester et k types de recherche dans le cycle, il y aura dans le pire des
 cas n*k requêtes.
 
-En terme du nombre de requêtes il serait plus efficace de faire une seule recherche
-standard, puis chercher les matchs exacts dans les résultats si l'on veut la recherche
-exacte, avant de prendre le premier si l'on ne trouve pas de match. Mais la recherche
-'exacte' prend en compte les noms alternatifs des lieux et donne de meilleurs résultats
-que du simple string matching.
-
 175 noms dans le fichier de test (donc 175*k requêtes).
-En général, 60 à 100 secondes pour un cycle.
-
-NB: les résultats de ces tests doivent être analysés à la main.
+La durée d'un cycle dépend surtout des serveurs GeoNames. En général, 30 à 100 secondes.
 """
 
+import sys
 from os import getcwd
 from re import finditer
 from time import time
 
-import Geoscape.geoloc as geo
-#Lancer depuis le dossier contenant le dossier Geonames_test et Reddit_projet
+import Geoscape.server.geoloc as geo
+#Lancer depuis le dossier contenant le dossier Geonames_test et Geoscape
+
+
+
+def test(searchlist):
+	print('########################################\n')
+
+	print('CYCLE DE RECHERCHE ',searchlist)
+
+	with open('Geonames_test/geonames_test.txt','r') as file:
+		timer_start = time()
+		score = 0
+		total_count = 0
+
+		for line in file:
+			pre_score = score
+			split_line = line.split(',')
+			location = geo.LocationList(split_line[2].lstrip(),[split_line[1].lstrip()])
+			geo_res = location.geo_search(geokey,geoauth,*searchlist)
+
+			split_line = line.split(':') #Bon résultats [1], acceptables [2]
+
+			good_res = split_line[1].split(',') #Parmi les bons
+			if geo_res.result:
+				for res in good_res[:-1]: #Les résultats sans le 'Accep'
+					if res[:-1].strip() == geo_res.result.address and res[-1] == geo_res.result.feature_class:
+						score += 1
+						break
+
+				if score == pre_score and split_line[2]:
+						ok_res = split_line[2].split(',') #Parmi les acceptables
+						ok_res[-1] = ok_res[-1].rstrip() #Supprime le \n
+						for res in ok_res:
+							if res[:-1].strip() == geo_res.result.address and res[-1] == geo_res.result.feature_class:
+								score += 0.5
+								break
+
+			elif good_res[0].strip() == 'aucun résultat':
+				score += 1
+
+			total_count += location.counter
+
+	timer_stop = time()
+
+	print('Score:',score,'points sur 175',f'({score/175*100:.2f}%).')
+	print(f'Nombre de requêtes: {total_count}.')
+	print(f'Durée: {timer_stop - timer_start:.2f} secondes (temps absolu).\n') #Très peu indicatif
+
+	while True:
+		select = input('Souhaitez vous procéder à un autre test? y/n')
+
+		if select in ['y','Y']:
+			break
+		elif select in ['n','N']:
+			exit()
+		else:
+			print('Entrez \'y\' pour retourner sur l\'écran de lancement ou \'n\' pour quitter.')
 
 
 
@@ -32,18 +81,31 @@ print('########################################')
 
 ###SAISIE
 
-print("""\nEntrez un cycle de recherche en une saisie -- séparez les termes par un espace.
-	R: recherche standard
-	RF: recherche fuzzy
-	E: recherche exacte
-	EN: recherche exacte sur ensembles naturels
-	EH: recherche exacte sur ensembles humains
-Q pour quitter.
-""")
+with open('Geoscape/geoscape.ini','r') as initfile:
+	f = initfile.readlines()
 
-search_patterns = []
+for line in f:
+	if line.startswith('key='):
+		geokey = line[4:].strip()
+	if line.startswith('auth='):
+		geoauth = line[5:].strip()
+
+if 'geokey' not in locals() or 'geoauth' not in locals():
+	sys.exit('Erreur à l\'initialisation: les codes d\'accès pour geonames ne sont '
+			 'pas présents. Complétez votre fichier de configuration.')
 
 while True:
+	print("""\nEntrez un cycle de recherche en une saisie -- séparez les termes par un espace.
+		R: recherche standard
+		RF: recherche fuzzy
+		E: recherche exacte
+		EN: recherche exacte sur ensembles naturels
+		EH: recherche exacte sur ensembles humains
+	Q pour quitter.
+	""")
+
+	search_patterns = []
+
 	pattern = input()
 	good_to_go = True
 
@@ -67,37 +129,5 @@ while True:
 			good_to_go = False
 			break
 
-	if good_to_go:
-		break
-
-###TESTS
-print('########################################\n')
-
-print('CYCLE DE RECHERCHE ',search_patterns)
-
-newfile = open('Geonames_test/geonames_results.txt','a')
-newfile.write('### '+', '.join(search_patterns)+' ###\n')
-
-with open('Geonames_test/geonames_test.txt','r') as file:
-	timer_start = time()
-	total_count = 0
-
-	for line in file:
-		split_line = line.split(',')
-		location = geo.LocationList(split_line[2].lstrip(),[split_line[1].lstrip()])
-		geo_res = location.geo_search(*search_patterns)
-
-		if geo_res.result:
-			newfile.write(split_line[1]+':\t'+geo_res.result.address+'\t'+geo_res.result.feature_class+'\n')
-		else:
-			newfile.write(split_line[1]+':\t'+'Aucun résultat.\n')
-
-		total_count += location.counter
-
-timer_stop = time()
-newfile.write('\n')
-newfile.close()
-
-print('Nombre de requêtes:',total_count)
-print('Durée:',timer_stop - timer_start,'secondes (temps absolu).') #Très peu indicatif
-
+	if good_to_go and search_patterns:
+		test(search_patterns)
