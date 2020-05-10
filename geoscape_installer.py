@@ -36,14 +36,10 @@ env = 'Geoscape_venv'
 create(env,with_pip=True,prompt='Geoscape')
 
 #Pas d'activation extérieur de l'env virtuel: exécution de l'interpréteur de l'env virtuel
-if(platform.startswith('win32')):
+if(platform.startswith('win')):
 	env_python = join(getcwd(),env,'Scripts','python')
 else:
 	env_python = join(getcwd(),env,'bin','python3')
-
-print('###################')
-print(env_python)
-print('###################')
 
 try:
 	run([env_python,'-m','pip','install','-r','requirements.txt','--no-cache-dir'],check=True)
