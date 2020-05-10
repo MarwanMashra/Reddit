@@ -73,13 +73,10 @@ $(document).ready(function(){
 		});
 	}
 
-	data_test=[{"link":"https://www.reddit.com/r/EarthPorn/comments/dq33cp/i_woke_up_at_430_am_hiked_up_for_2_hrs_and_saw/","img_url":"https://i.redd.it/7h95m06db2w31.png","search_version":"1.00","country":"France","country_code":"FR","scraped_title":"I woke up at 4:30 AM, hiked up for 2 hrs and saw this incredible show. Chamonix, France.","text":"I woke up at 4:30 AM, hiked up for 2 hrs and saw this incredible show. Chamonix, France. [OC][1080x1080] Instagram: @bavarianexplorer","tag_list":[["I","PNP","i"],["woke","VVD","wake"],["up","AVP","up"],["at","PRP","at"],["4","CRD","4"],[":","PUN",":"],["30","CRD","30"],["AM","NP0","am"],[",","PUN",","],["hiked","VVD","hike"],["up","AVP","up"],["for","PRP","for"],["2","CRD","2"],["hrs","NN2","hr"],["and","CJC","and"],["saw","VVD","see"],["this","DT0","this"],["incredible","AJ0","incredible"],["show","NN1","show"],[".","SENT","."],["Chamonix","NP0","chamonix"],[",","PUN",","],["France","CTY","france"],[".","SENT","."]],"location_list":["7","AM","12","Chamonix","3"],"date":{"year":"2019","month":"11","day":"1","hour":"11","min":"44","sec":"13"},"author":{"name":"dwd0tcom","icon":"https://styles.redditmedia.com/t5_d9jre/styles/profileIcon_h994xh4vf9g31.jpg?width=256&height=256&crop=256:256,smart&s=d8bf8b24961489d2401c45a3df5eddd915487a1f","profile":"https://www.reddit.com/user/dwd0tcom"},"name":"Ames","lng":"2.41556","lat":"50.54167","feature_class":"A","location":"AM","test_list":["Chamonix"],"test_result":"NOT_OK"}]
-
 	function startTest(d){
 		//enregister les données dans une variable glabale data 
 		data=d; 
-		//data['results'] = data_test+ data['results']
-		data['results'] = data_test.concat(data['results'])
+
 		if(DEBUG) console.log(data['results']);
 		NB_TEST= data['results'].length
 		//préparer la variable result 
