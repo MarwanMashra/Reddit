@@ -80,7 +80,7 @@ $(document).ready(function(){
 		data=d; 
 		//data['results'] = data_test+ data['results']
 		data['results'] = data_test.concat(data['results'])
-		console.log(data['results']);
+		if(DEBUG) console.log(data['results']);
 		NB_TEST= data['results'].length
 		//préparer la variable result 
 		result['search_version']= SEARCH_VERSION;
@@ -179,7 +179,6 @@ $(document).ready(function(){
 	}
 
 	function createSeceondForm(){
-		console.log(image);
 		if(valuesCheckbox.length > 0){
 			$.ajax({
 				type:"GET",
@@ -201,7 +200,7 @@ $(document).ready(function(){
 		
 	}
 	function createSeceondFormSuite(locations_list){
-		console.log(locations_list)
+		if(DEBUG) console.log(locations_list)
 		stopAnimation();
 
 		//enlever la répétition 
@@ -344,7 +343,6 @@ $(document).ready(function(){
 
 		$.each(locations_list,function(i,location){
 			nbSpace= maxLength - location[0].length;
-			console.log(nbSpace);
 			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location[0]+'">';
 			html+=  '<label for="location'+i+'"> '+location[0]+'</label>'+space(nbSpace)+' ('+feature_class(location[1])+')<br>';
 		});
