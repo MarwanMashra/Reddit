@@ -212,7 +212,7 @@ $(document).ready(function(){
 			html+= "-----";
 		}
 		
-		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir la plus proche (ou Aucun) :</p>';
+		html+= '<br><p class="question_phrase">Voici les résultats de géolocalisation. Veuillez choisir le plus proche (ou Aucun) :</p>';
 		html+= genRadio(locations_list);
 		html+= '<br>'+genkeywords();
 		

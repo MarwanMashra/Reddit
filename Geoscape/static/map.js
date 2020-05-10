@@ -243,7 +243,7 @@ $(document).ready(function(){
 		html+='<a title="Voir le profil" style="text-decoration : none" href="'+image['author']['profile']+'" target="_blank">';
 		html+= '<span id="nameProfil">'+image['author']['name']+'</span></a>';
 		html+= '<a href="'+image['img_url']+'" title="Voir en plein d\'écran " target="_blank"><i class="material-icons icoc_clickable">aspect_ratio</i></a>';
-		html+= '<a href="'+image['link']+'" title="Voir dans le site original" target="_blank"><i class="material-icons launch icoc_clickable">launch</i></a>';
+		html+= '<a href="'+image['link']+'" title="Voir sur le site d\'origine" target="_blank"><i class="material-icons launch icoc_clickable">launch</i></a>';
 		html+= '</p>';
 		html+='<p id="second_line">';
 		html+= '<i class="material-icons icon">location_on</i>';
@@ -259,7 +259,7 @@ $(document).ready(function(){
 		//partie signalement
 		originalReport= '<p id="report"><span class="material-icons icon_feedback" title="Votre réponse nous aidera à améliorer la recherche">feedback</span>'+space(1);
 		originalReport+= '<span> Aidez-nous 🙏🏼 | </span>';
-		originalReport+='<span id="text_report"><span style="font-weight: bold"> '+image['name']+'</span>, est-il le lieu indiqué dans le commantaire ci-dessus ?</span><br>';
+		originalReport+='<span id="text_report"><span style="font-weight: bold"> '+image['name']+'</span>, est-il le lieu indiqué dans le titre ci-dessus ?</span><br>';
 		originalReport+= space(8)+'<button class="signaler" id="Oui">Oui'+space(2)+'<span class="material-icons icon_thumb" style="color:#2f55a4">thumb_up</span></button>'+space(3);
 		originalReport+= '<button class="signaler" id="Non">Non'+space(2)+'<span class="material-icons icon_thumb" style="color:#a52a2a">thumb_down</span></button>';
 		originalReport+= '</p>';

@@ -9,5 +9,6 @@ setup(
 	author='redditScrape Team',
 	packages=['Geoscape'],
 	include_package_data=True,
-	install_requires=['flask','pymongo','praw','geocoder']
+	install_requires=['flask','pymongo','praw','treetaggerwrapper',
+					  'bcrypt','dnspython','geocoder','more_itertools']
 	)

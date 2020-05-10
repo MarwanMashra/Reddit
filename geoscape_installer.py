@@ -36,7 +36,7 @@ env = 'Geoscape_venv'
 create(env,with_pip=True,prompt='Geoscape')
 
 #Pas d'activation extérieur de l'env virtuel: exécution de l'interpréteur de l'env virtuel
-if(platform.startswith('win32')):
+if(platform.startswith('win')):
 	env_python = join(getcwd(),env,'Scripts','python')
 else:
 	env_python = join(getcwd(),env,'bin','python3')
@@ -62,44 +62,25 @@ with open('GEOSCAPE_VENV_PATH','w') as file:
 print('Le chemin absolu pour activer l\'environnement virtuel a été exporté dans le'
 	  'fichier GEOSCAPE_VENV_PATH.')
 
-if not platform.startswith('win'):
+if platform.startswith('linux'):
 	with context(join('Treetagger','TreeTagger_unix')):
 		run(['./install-tagger.sh'],check=True)
+	print('Installation de l\'étiqueteur TreeTagger réussie.')
 
-print('Installation de l\'étiqueteur TreeTagger réussie.')
-
-"""
-	print('Pour l\'installation manuelle de TreeTagger sous Windows: allez dans le dossier'
-		  'Treetagger, puis dans dans le dossier correspondant à votre version de Windows;'
-		  'suivez les instructions du fichier INSTALL.')
-	exit()
+if platform.startswith('linux'):
+	command = 'export FLASK_APP=Geoscape/__init__.py'
 else:
-	with context(join('Treetagger','TreeTagger_unix')):
-		run(['./install-tagger.sh'],check=True)
-	print('Installation de l\'étiqueteur TreeTagger réussie.')"""
+	command = 'set FLASK_APP=Geoscape/__init__.py'
 
-if platform.startswith('win'):
-	print("""Installation de l'environnement virtuel pour Geoscape réussie. Veuillez placer le
-	répertoire Geoscape, Treetagger et les fichiers setup.py et praw.ini dans votre
-	répertoire serveur local. Assurez-vous d'avoir toutes les permissions nécessaires.
-	Depuis le répertoire serveur local, activez l'environnement virtuel avec la
-	commande '. <le chemin dans GEOSCAPE_VENV_PATH>'
-	Ensuite, installez le package avec la commande 'pip install -e .'
-	Puis indiquez le chemin à Flask avec la commande 
-	'set FLASK_APP=Geoscape/__init__.py'
-	Enfin lancez Geoscape avec la commande 'flask run'
-	La commande 'deactivate' désactive l'environnement virtuel.
-	""")
-
-else:
-	print("""Installation de l'environnement virtuel pour Geoscape réussie. Veuillez placer le
-	répertoire Geoscape, Treetagger et les fichiers setup.py et praw.ini dans votre
-	répertoire serveur local. Assurez-vous d'avoir toutes les permissions nécessaires.
-	Depuis le répertoire serveur local, activez l'environnement virtuel avec la
-	commande '. <le chemin dans GEOSCAPE_VENV_PATH>'
-	Ensuite, installez le package avec la commande 'pip install -e .'
-	Puis indiquez le chemin à Flask avec la commande 
-	'export FLASK_APP=Geoscape/__init__.py'
-	Enfin lancez Geoscape avec la commande 'flask run'
-	La commande 'deactivate' désactive l'environnement virtuel.
-	""")
+print("""Installation de l'environnement virtuel pour Geoscape réussie. Veuillez placer
+les répertoires Geoscape, Treetagger et les fichiers setup.py et praw.ini dans
+votre répertoire serveur local.
+Assurez-vous d'avoir toutes les permissions nécessaires.
+Depuis le répertoire serveur local, activez l'environnement virtuel avec la
+commande '. <le chemin écrit dans le fichier GEOSCAPE_VENV_PATH>'
+Ensuite, installez le package avec la commande 'pip install -e .'
+Puis indiquez le chemin à Flask avec la commande""")
+print(f'\'{command}\'')
+print("""Enfin lancez Geoscape avec la commande 'flask run'
+La commande 'deactivate' désactive l'environnement virtuel.
+""")
