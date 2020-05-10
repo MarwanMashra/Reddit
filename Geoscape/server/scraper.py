@@ -166,10 +166,8 @@ def scraping():
 		#Config TreeTagger. Le dossier Treetagger doit être dans le dossier d'où le programme est exécuté
 		if sys.platform.startswith('linux'):
 			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_unix'))
-		elif sys.platform.startswith('win32'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_win32'))
-		elif sys.platform.startswith('win64'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_win64'))
+		elif sys.platform.startswith('win'):
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_windows'))
 		else:
 			sys.exit('Système d\'exploitation non compatible avec Geoscape.')
 
