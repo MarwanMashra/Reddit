@@ -281,8 +281,13 @@ $(document).ready(function(){
 
 
 	function updateResult(){
+		var list_checkbox=[];
+		$.each(valuesCheckbox,function(i,element){
+			list_checkbox.push(element[1]);
+		});
+
 		$.each(image['tag_list'], function(i,mot){            //parcourir la liste tag_list
-            result['results'][index]['lieux_choisis'].push( $.inArray(mot[0],valuesCheckbox) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
+            result['results'][index]['lieux_choisis'].push( $.inArray(mot[0],list_checkbox) != -1 );   //tester si le mot est présent dans values et mettre le booléen dans la liste des résultats
 		});
 		
 		result['results'][index]['suffisant']= ($("input[name='keywords']:checked").val() == "Oui");
