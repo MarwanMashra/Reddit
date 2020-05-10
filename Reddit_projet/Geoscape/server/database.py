@@ -133,7 +133,7 @@ def get_results():
 
 	dbfinder.reinit({'search_version': version, 'test_result': result_value,
 					 'testers': {'$bitsAllSet': 2**test_code}}, #Opérateur binaire
-					{'text': 1, 'search_version': 1, 'img_url': 1, 'tag_list': 1,
+					{'text': 1, 'search_version': 1, 'img_url': 1, 'tag_list': 1,'scraped_title':1,
 					 'test_list': 1, 'location_list': 1, 'location': 1, 'name': 1,
 					 'country_code': 1, '_id': 0})
 	doc_list = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
