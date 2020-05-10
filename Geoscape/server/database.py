@@ -122,7 +122,6 @@ def get_results():
 	renvoie en format JSON des résultats à la page de tests.
 	"""
 
-	print('test: server function entered')
 	result_value = request.args.get('value')
 	version = request.args.get('version')
 	limit = int(request.args.get('limit'))
@@ -137,7 +136,6 @@ def get_results():
 					 'test_list': 1, 'location_list': 1, 'location': 1, 'name': 1,
 					 'country_code': 1, '_id': 0})
 	doc_list = list(dbfinder.retrieve('Resultats_RGN',limit=limit))
-	print('test: query succeeded')
 	print(doc_list[0])
 
 	return jsonify(results=doc_list)
@@ -190,7 +188,8 @@ def send_results():
 		if test_item['lieux_choisis']: #Si la liste est vide, le testeur n'a pas su répondre
 			result_docs.append({'tester': tester, 'search_version': version, 'img_url': url,
 								'locations_selected': test_item['lieux_choisis'],
-								'sufficient': test_item['suffisant']})
+								'sufficient': test_item['suffisant'],
+								'geoname': test_item['geonames_chosen_result']})
 
 	documents = mongo.MongoSave(result_docs)
 	documents.storeindb('Resultats_Test_Expert_1',tester='A',img_url='A',search_version='D')
