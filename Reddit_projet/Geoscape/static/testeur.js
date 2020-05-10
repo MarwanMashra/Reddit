@@ -73,11 +73,15 @@ $(document).ready(function(){
 		});
 	}
 
+	data_test=[{"link":"https://www.reddit.com/r/EarthPorn/comments/dq33cp/i_woke_up_at_430_am_hiked_up_for_2_hrs_and_saw/","img_url":"https://i.redd.it/7h95m06db2w31.png","search_version":"1.00","country":"France","country_code":"FR","scraped_title":"I woke up at 4:30 AM, hiked up for 2 hrs and saw this incredible show. Chamonix, France.","text":"I woke up at 4:30 AM, hiked up for 2 hrs and saw this incredible show. Chamonix, France. [OC][1080x1080] Instagram: @bavarianexplorer","tag_list":[["I","PNP","i"],["woke","VVD","wake"],["up","AVP","up"],["at","PRP","at"],["4","CRD","4"],[":","PUN",":"],["30","CRD","30"],["AM","NP0","am"],[",","PUN",","],["hiked","VVD","hike"],["up","AVP","up"],["for","PRP","for"],["2","CRD","2"],["hrs","NN2","hr"],["and","CJC","and"],["saw","VVD","see"],["this","DT0","this"],["incredible","AJ0","incredible"],["show","NN1","show"],[".","SENT","."],["Chamonix","NP0","chamonix"],[",","PUN",","],["France","CTY","france"],[".","SENT","."]],"location_list":["7","AM","12","Chamonix","3"],"date":{"year":"2019","month":"11","day":"1","hour":"11","min":"44","sec":"13"},"author":{"name":"dwd0tcom","icon":"https://styles.redditmedia.com/t5_d9jre/styles/profileIcon_h994xh4vf9g31.jpg?width=256&height=256&crop=256:256,smart&s=d8bf8b24961489d2401c45a3df5eddd915487a1f","profile":"https://www.reddit.com/user/dwd0tcom"},"name":"Ames","lng":"2.41556","lat":"50.54167","feature_class":"A","location":"AM","test_list":["Chamonix"],"test_result":"NOT_OK"}]
+
 	function startTest(d){
-		//enregister les données dans une variable glabale data
+		//enregister les données dans une variable glabale data 
 		data=d; 
-		NB_TEST= data['results'].length
+		//data['results'] = data_test+ data['results']
+		data['results'] = data_test.concat(data['results'])
 		console.log(data['results']);
+		NB_TEST= data['results'].length
 		//préparer la variable result 
 		result['search_version']= SEARCH_VERSION;
 		result['img_url']=[];
@@ -107,8 +111,6 @@ $(document).ready(function(){
 	function createForm(){
 		
 		image=data['results'][index];
-		console.log(image);
-		
 		//créer le formulaire
 		var form='';             
 		form+= '<div id="testForm" class="test">';
@@ -120,17 +122,6 @@ $(document).ready(function(){
 		form+= choiceScript();
 		form+= choiceUser();
 		form+= genCheckbox();
-
-		/*form+= genkeywords();
-		//checkbox "je sais pas"
-		form+= '<br><p>-------------------------------------------------------</p>';
-		form+= '<input type="checkbox" name="je_sais_pas" id="je_sais_pas" value="je_sais_pas">';
-		form+= '<label for="je_sais_pas">Je sais pas, je passe cette question.</label><br>';
-	
-		form+= '<br><button value="continue">Valider</button>'
-		if (index+1 < NB_TEST){     //pour ne pas montrer ce choix avec la dernière question
-   			form+= '<button value="stop">Valider et quitter</button>'
-		}*/
 
 		form+= '<br><br><button value="passe">Passer cette question</button>';
 		form+= '<button value="cherche">Chercher des résultats</button>';
@@ -179,7 +170,6 @@ $(document).ready(function(){
 				else{
 					send();
 					createPageEnd();
-					$('#goToMap').show();
 				}
 
 			}
@@ -189,28 +179,45 @@ $(document).ready(function(){
 	}
 
 	function createSeceondForm(){
-		//createSeceondFormSuite(["Lieu_1","Lieu_2","Lieu_3","Lieu_4"]);
-		$.ajax({
-			type:"GET",
-			url:"/get_results_geonames",
-			datatype: "json",
-			data:{    
-				locations: concateListe(valuesCheckbox,true,false),
-				country_code: image['country_code']
-			},
-			beforeSend:startAnimation,
-			success: createSeceondFormSuite,
-		}).fail(printError);	
+		console.log(image);
+		if(valuesCheckbox.length > 0){
+			$.ajax({
+				type:"GET",
+				url:"/get_results_geonames",
+				datatype: "json",
+				data:{    
+					location: concateListe(valuesCheckbox,true,false),
+					country_code: image['country_code']
+				},
+				beforeSend:startAnimation,
+				success: createSeceondFormSuite,
+			}).fail(printError);	
+		}
+
+		else{
+			createSeceondFormSuite([]);
+		}
+		
 		
 	}
-	function createSeceondFormSuite(list_locations){
+	function createSeceondFormSuite(locations_list){
+		console.log(locations_list)
 		stopAnimation();
-	
+
+		//enlever la répétition 
+		locations_list= unique(locations_list)
+
 		var html= '<div id="contenuTest">';
 		html+= '<p class="question_phrase">Vous avez choisi le lieu suivant :</p>'
-		html+= concateListe(valuesCheckbox,true,true);
-		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir le plus proche (ou Aucun) :</p>';
-		html+= genRadio(list_locations);
+		if(valuesCheckbox.length >0){
+			html+= concateListe(valuesCheckbox,true,true);
+		}
+		else{
+			html+= "-----";
+		}
+		
+		html+= '<br><p class="question_phrase">Voici les résultats trouvés, veuillez choisir la plus proche (ou Aucun) :</p>';
+		html+= genRadio(locations_list);
 		html+= '<br>'+genkeywords();
 		
 		if (index+1 < NB_TEST){     //pour ne pas montrer ce choix avec la dernière question
@@ -227,7 +234,7 @@ $(document).ready(function(){
 	function genCheckbox(){
 		var tag_list= image['tag_list'];
 		var text= image['text'];
-		var html='<p class="question_phrase">Veuillez choisir les mots indiquant le lieu:</p><p>';
+		var html='<p class="question_phrase">Veuillez choisir les mots indiquant le lieu (s\'il y en a):</p><p>';
 		var pos;
 		$.each(tag_list,function(i,mot){
 			if(mot[1]!="," && mot[1]!="PUN" && mot[1]!="SENT"){
@@ -242,30 +249,17 @@ $(document).ready(function(){
 
 		return html;
 	}
-	/*
-		
-
-		if(tag_mot[1]=="PUN" || tag_mot[1]=="SENT"){      //si le mot est une poncutation 
-			checkbox+= tag_mot[0];
-			}
-			else if(tag_mot[1]=="CTY"){
-				checkbox+= ' '+tag_mot[0];
-			}
-			else{               //créer un checkbox pour le mot
-				checkbox+= '<label for="checkbox'+i+'" class="label">  '+tag_mot[0]+'</label>'
-				checkbox+= '<input type="checkbox" name="checkbox'+i+'" id="checkbox'+i+'" class="checkbox" value="'+tag_mot[0]+'">'
-			}
-			html+= text + '</p>';     //mettre le reste de la phrase dans la balise p
-		*/
 
 	function genkeywords(){
+		/*
 		var loc_list=image['location_list'];
 		var proper_loc=loc_list.filter(x => isNaN(x));
+		*/
 
-		var keywords='<p class="question_phrase">Est-ce que le lieu est présent dans ces mots clés :';
+		var keywords='<br><p class="question_phrase">La location, est-elle présente dans le titre ?</p>';
 		//keywords+='<p>'+image['location_list']+'</p>';
-		keywords+='<p>'+proper_loc+'</p>';
-		keywords+='<input type="radio" id="Oui" name="keywords" value="Oui" >';
+		keywords+='<p>'+image['scraped_title']+'</p>';
+		keywords+='<p><input type="radio" id="Oui" name="keywords" value="Oui" >';
 		keywords+='<label for="Oui"> Oui, il est présent</label></p>';
 		keywords+='<input type="radio" id="Non" name="keywords" value="Non" checked>';
 		keywords+='<label for="Non"> Non, il n\'est pas présent</label></p>';
@@ -283,6 +277,8 @@ $(document).ready(function(){
 			valuesCheckbox.push([i,$(this).val()]);         //remplir la liste avec les mots mots 
 		});
 	}
+
+
 
 	function updateResult(){
 		$.each(image['tag_list'], function(i,mot){            //parcourir la liste tag_list
@@ -335,24 +331,17 @@ $(document).ready(function(){
 		return str.substring(0, str.length - 1);
 	}
 
-	function genRadio(list_locations){
-		var html="";
-		$.each(list_locations,function(i,location){
-			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location+'">';
-			html+=  '<label for="location'+i+'"> '+location+'</label><br>';
-		});
+	function genRadio(locations_list){
+		var html='<p class="radio" style="text-align:left;margin-left:30%">';
+		var maxLength= getMaxLength(locations_list);
+		maxLength+=10;
+		var nbSpace;
 
-		html+= '<input type="radio" id="Aucun" name="location" value="None" checked>';
-		html+= '<label for="Aucun">Aucun</label>';
-
-		return html;
-	}
-
-	function genRadio(list_locations){
-		var html="";
-		$.each(list_locations,function(i,location){
-			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location+'">';
-			html+=  '<label for="location'+i+'"> '+location+'</label><br>';
+		$.each(locations_list,function(i,location){
+			nbSpace= maxLength - location[0].length;
+			console.log(nbSpace);
+			html+=  '<input type="radio" id="location'+i+'" name="location" value="'+location[0]+'">';
+			html+=  '<label for="location'+i+'"> '+location[0]+'</label>'+space(nbSpace)+' ('+feature_class(location[1])+')<br>';
 		});
 
 		html+= '<input type="radio" id="Aucun" name="location" value="None" checked>';
@@ -385,6 +374,87 @@ $(document).ready(function(){
 		}
 	}
 
+	function unique(listlist) {
+		var list=[]
+		var result = [];
 
+		$.each(listlist, function(i, element) {
+			if ($.inArray(element[0], list) == -1){
+			result.push(element)
+			list.push(element[0]);
+			}
+		});
+
+		return result;
+	}
+
+	function feature_class(c){
+		var str;
+		switch (c) {
+			case 'A':
+				str= "Divisions administratives";
+				break;
+			case 'H':
+				str= "Eaux superficielles";
+				break;
+			case 'L':
+				str= "Parcs / Réserves / Régions";
+				break;
+			case 'P':
+				str= "Lieux peuplés";
+				break;
+			case 'R':
+				str= "Routes";
+				break;
+			case 'S':
+				str= "Structures";
+				break;
+			case 'T':
+				str= "Montagnes / Îles";
+				break;
+			case 'U':
+				str= "Sous-marine";
+				break;
+			case 'V':
+				str= "Forêts";
+				break;
+		
+			default:
+				str="inconnu";
+				break;
+		}
+
+		return str;
+	}
+
+	function space(n){
+		str='';
+		while(n>0){
+			str+='&nbsp';
+			n--;
+		}
+		return str;
+	}
+	function getMaxLength(list){
+		var max=0;
+		$.each(list,function(i,element){
+			if(element[0].length > max){
+				max= element[0].length ;
+			}
+		});
+
+		return max;
+	}
 
 });
+/*GeoNames feature classes ('fcl' dans le JSON de Geonames, champ 'feature_class' de geocoder)
+		A   Administrative divisions
+		H   Surface waters
+		L   Parks/reserves/regions
+		P   Populated places
+		R   Roads
+		S   Structures
+		T   Mountains/islands
+		U   Undersea
+		V   Woodlands
+*/

@@ -147,13 +147,6 @@ def get_session():
 	return dic
 
 
-@app.route('/test')
-@app.route('/test.html')
-def test():
-	return render_template('test-expert.html')
-
-
-
 @app.route('/testeur')
 @app.route('/testeur.html')
 def testeur():
