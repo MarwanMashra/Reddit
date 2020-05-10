@@ -148,7 +148,7 @@ def get_results_geonames():
 	locations = request.args.get('location').split(',')
 	country_code = request.args.get('country_code')
 
-	placefinder = geo.LocationsList(country_code,[])
+	placefinder = geo.LocationList(country_code,[])
 	loc_results = []
 
 	for loc in locations:
@@ -157,10 +157,9 @@ def get_results_geonames():
 			geo_res = placefinder.geo_search(current_app.config['GEOKEY'],
 									current_app.config['GEOAUTH'],search)
 			if geo_res.result:
-				loc_results.append([geo_res.address,geo_res.feature_class])	#Nom et catégorie
+				loc_results.append([geo_res.result.address ,geo_res.result.feature_class])	#Nom et catégorie
 
 	return jsonify(loc_results)
-
 
 
 @mdb.route('/send_results',methods=['POST'])
