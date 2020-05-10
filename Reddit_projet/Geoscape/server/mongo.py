@@ -102,8 +102,8 @@ class MongoSave(Mongo):
 		except pymongo.errors.BulkWriteError as error:
 			for e in error.details['writeErrors']:
 				if e['code'] == 11000: #DuplicateKeyError
-					print(f'Document {e['op']['_id']} déjà présent dans la collection '
-						  f'{coll.name} de la base de données.')
+					print('Document '+str(e['op']['_id'])+' déjà présent dans la collection',
+						  coll.name,'de la base de données.')
 				else:
 					raise
 		else:

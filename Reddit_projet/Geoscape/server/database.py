@@ -76,15 +76,17 @@ def report():
 		dbfinder.reinit(proj={'code': 1, '_id': 0})
 		tester_list = list(dbfinder.retrieve('Testeurs'))
 		n = len(tester_list)
-		num_testers = min(n if n % 2 else n - 1, 9)
 
-		seed()	#Sélection aléatoire dans la liste
-		tester_sum = sum(2**t['code'] for t in sample(tester_list,num_testers))
-		bytesize = floor(log2(tester_sum)/8 if tester_sum else 0) + 1 #log2(0) non défini
-		tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
-		
-		update.reinit(update={'$set': {'testers': tester_sum}})
-		update.singleval_upd('Resultats_RGN')
+		if n >= 1:
+			num_testers = min(n if n % 2 else n - 1, 9)
+
+			seed()	#Sélection aléatoire dans la liste
+			tester_sum = sum(2**t['code'] for t in sample(tester_list,num_testers))
+			bytesize = floor(log2(tester_sum)/8 if tester_sum else 0) + 1 #log2(0) non défini
+			tester_sum = tester_sum.to_bytes(bytesize,byteorder='big')
+			
+			update.reinit(update={'$set': {'testers': tester_sum}})
+			update.singleval_upd('Resultats_RGN')
 
 	return jsonify(status='OK')
 
@@ -161,7 +163,7 @@ def get_results_geonames():
 			geo_res = placefinder.geo_search(current_app.config['GEOKEY'],
 									current_app.config['GEOAUTH'],search)
 			if geo_res.result:
-				loc_results.append([geo_res.result.address ,geo_res.result.feature_class])	#Nom et catégorie
+				loc_results.append([geo_res.result.address,geo_res.result.feature_class])	#Nom et catégorie
 
 	return jsonify(loc_results)
 

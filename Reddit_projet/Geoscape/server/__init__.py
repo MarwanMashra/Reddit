@@ -3,12 +3,13 @@
 
 import sys
 from os import getcwd
+from os.path import join
 
 from pymongo import MongoClient
 
 
 
-with open(getcwd()+'/Geoscape/geoscape.ini','r') as initfile:
+with open(join(getcwd(),'Geoscape','geoscape.ini'),'r') as initfile:
 	f = initfile.readlines()
 
 for line in f:

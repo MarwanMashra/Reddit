@@ -1,0 +1,9 @@
+flask~=1.1
+pymongo~=3.10
+praw~=6.5
+treetaggerwrapper
+bcrypt
+dnspython
+geocoder
+more_itertools
+

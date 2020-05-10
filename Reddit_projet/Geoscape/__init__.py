@@ -3,6 +3,7 @@
 
 import sys
 from os import getcwd
+from os.path import join
 
 from flask import Flask
 
@@ -15,7 +16,7 @@ from Geoscape.server.database import mdb
 app = Flask(__name__)
 app.config.from_mapping(SECRET_KEY='mysecret')
 
-with open(getcwd()+'/Geoscape/geoscape.ini','r') as initfile:
+with open(join(getcwd(),'Geoscape','geoscape.ini'),'r') as initfile:
 	f = initfile.readlines()
 
 for line in f:

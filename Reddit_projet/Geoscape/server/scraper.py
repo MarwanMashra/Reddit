@@ -4,7 +4,8 @@
 import sys
 from copy import deepcopy
 from itertools import groupby
-from os import getcwd, name
+from os import getcwd
+from os.path import join
 from pprint import pprint
 from re import search
 from time import gmtime
@@ -164,11 +165,11 @@ def scraping():
 
 		#Config TreeTagger. Le dossier Treetagger doit être dans le dossier d'où le programme est exécuté
 		if sys.platform.startswith('linux'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_unix/')
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_unix'))
 		elif sys.platform.startswith('win32'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_win32/')
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_win32'))
 		elif sys.platform.startswith('win64'):
-			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=getcwd()+'/Treetagger/TreeTagger_win64/')
+			reddit_tagger = TreeTagger(TAGLANG='en',TAGDIR=join(getcwd(),'Treetagger','TreeTagger_win64'))
 		else:
 			sys.exit('Système d\'exploitation non compatible avec Geoscape.')
 

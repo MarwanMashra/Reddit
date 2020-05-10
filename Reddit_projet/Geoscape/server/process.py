@@ -81,7 +81,7 @@ def create_rule():
 				good_neighbors.append(list(takewhile(lambda x: x[0], comp_list[i:])))
 				i += len(good_neighbors)
 
-			if comp_list[i][0] != bool(comp_list[i][1]):
+			if i < len(comp_list) and comp_list[i][0] != bool(comp_list[i][1]):
 				errpos = len(good_neighbors)
 				errtype = comp_list[i][0]
 				err = list(takewhile(lambda x:
