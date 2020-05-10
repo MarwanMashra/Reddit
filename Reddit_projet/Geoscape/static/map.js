@@ -41,7 +41,7 @@ $(document).ready(function(){
 	function createElementsUSer(x){
 		session = x;
 		est_admin = session['admin?'];
-		if(session['username']){//<a href="{{ url_for('map') }}"><button id="goToMap">Visiter la map</button></a>	
+		if(session['username']){	
 			if(est_admin){
 				$("#menu_user").append('<a href="testeur"><button class="button_user">Zone de test</button></a>');
 			}
